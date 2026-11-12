@@ -1,0 +1,65 @@
+name: CI
+
+# SECURITY.md §32 checklist: "Automated vulnerability scanning integrated
+# into CI" + general Phase 13 (Testing + Performance) requirement that
+# every meaningful change is checked before merge. Runs on Node 22 (this
+# project's actual required engine, package.json) even though the sandbox
+# this was developed in runs Node 20 — CI is a fresh environment, not
+# constrained by that pre-existing local gap (see docs/PROJECT_STATUS.md).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      # Supabase's own well-known local-development defaults (identical for
+      # every `supabase start` on every machine) — not secrets, matching
+      # the fallback values already hardcoded in tests/db/*.test.ts and
+      # tests/e2e/*.spec.ts for the same reason.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Dependency vulnerability audit
+        # Fails the build on any moderate-or-higher advisory in a production
+        # dependency — informational for dev-only dependencies, since a
+        # vulnerable dev tool never ships to production.
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase stack
+        run: supabase start
+
+      - name: Unit + real-database integration tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build

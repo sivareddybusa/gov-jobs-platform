@@ -1,0 +1,367 @@
+Complete the Government Jobs Platform
+
+You are the primary coding agent for this repository.
+
+Your task is to continue and complete the entire project, not merely explain what should be done.
+
+Before writing code, read and understand:
+
+CLAUDE.md
+docs/TECH_STACK.md
+docs/ARCHITECTURE.md
+docs/PRD.md
+docs/DATABASE.md
+docs/ELIGIBILITY_ENGINE.md
+docs/SECURITY.md
+docs/IMPLEMENTATION_ROADMAP.md
+docs/PROJECT_STATUS.md
+
+Also inspect the actual repository and existing implementation.
+
+Current project state
+
+Phases 0–3 are already completed:
+
+Project specification
+Technology/architecture foundation
+Database schema
+RLS/security
+Authentication
+Registration
+Email verification
+Login/logout
+Password reset
+User onboarding
+
+The database has all currently specified tables, RLS policies, constraints, indexes, reference data, generated Supabase types, and database security tests.
+
+Authentication and onboarding have been implemented and tested with real local Supabase + Mailpit + Playwright.
+
+Do NOT rebuild completed functionality unless inspection shows it is broken or inconsistent with the specifications.
+
+Current task
+
+Start from the first incomplete phase in:
+
+docs/IMPLEMENTATION_ROADMAP.md
+
+The expected next phase is:
+
+Phase 4 — Profile + Qualifications
+
+However, verify this against the repository before starting.
+
+Development behavior
+
+Work as an autonomous senior full-stack engineer.
+
+Do not repeatedly ask me:
+
+"Should I continue?"
+"What should I do next?"
+"Would you like me to implement this?"
+"Should I proceed to the next phase?"
+
+Instead:
+
+Read the specifications.
+Inspect the current implementation.
+Determine the next incomplete phase.
+Implement it completely.
+Test it.
+Fix failures.
+Perform security review.
+Update project status/documentation.
+Move automatically to the next phase.
+Continue until the project is complete.
+Important
+
+The specifications are authoritative.
+
+Do NOT silently change product requirements, database design, security requirements, or eligibility behavior merely because implementation is inconvenient.
+
+If the actual repository differs from the documentation:
+
+investigate first
+determine whether the code or documentation is stale
+preserve intentional previous decisions
+make the smallest correct change
+
+If there is a genuine conflict or high-impact unresolved decision, stop and explain it instead of guessing.
+
+Security rules
+
+These are mandatory:
+
+Never trust client-supplied user IDs.
+Never trust client-supplied roles.
+Never trust client-supplied permissions.
+Never trust client-supplied eligibility results.
+Never expose the Supabase service-role key to the browser.
+Never bypass RLS for convenience.
+Resolve authenticated users server-side.
+Validate server inputs with Zod.
+Use database constraints where appropriate.
+Keep sensitive operations server-side.
+Preserve the existing RLS model.
+Preserve audit/history protections.
+Treat government documents as untrusted input.
+Treat AI output as untrusted candidate data.
+AI must never directly decide final eligibility.
+Protect all server-side URL fetching against SSRF.
+Do not execute uploaded or downloaded documents.
+Eligibility rules
+
+The eligibility engine must remain deterministic.
+
+The final decision must come from structured rules + user profile data.
+
+Possible results:
+
+eligible
+not_eligible
+needs_verification
+
+Never guess when rules or profile data are ambiguous.
+
+Age must be calculated from DOB against the job-specific cutoff date.
+
+Do not use today's date when the job provides an age cutoff.
+
+Category and special statuses remain separate concepts.
+
+Do not collapse them into one field.
+
+State and domicile remain distinct.
+
+Qualification matching remains AND-of-OR groups.
+
+AI may extract candidate rules, but the deterministic eligibility engine decides the result.
+
+Architecture rules
+
+Maintain the modular monolith:
+
+Browser
+  ↓
+Next.js
+  ↓
+Application/Service Layer
+  ↓
+Domain + DB
+  ↓
+Supabase/Postgres
+
+
+Maintain the intended separation:
+
+app/
+components/
+features/
+services/
+domain/
+db/
+lib/
+supabase/
+tests/
+
+
+The domain layer must remain framework-independent.
+
+Do not introduce unnecessary abstractions.
+
+Do not create empty folders merely for architectural appearance.
+
+Create abstractions when real functionality requires them.
+
+Database rules
+
+Use Supabase migrations for schema changes.
+
+Never manually modify the database without a migration.
+
+Do not edit already-applied migrations.
+
+Create a new migration for changes.
+
+Regenerate:
+
+lib/supabase/types.ts
+
+after schema changes.
+
+Preserve:
+
+RLS
+constraints
+indexes
+foreign-key behavior
+audit/history behavior
+
+Remember:
+
+admin_role_assignments.granted_by
+
+uses:
+
+ON DELETE SET NULL
+
+as fixed in Phase 2.1.
+
+Testing requirements
+
+After each meaningful implementation phase, run the appropriate:
+
+typecheck
+lint
+format check
+unit tests
+integration/database tests
+security tests
+Playwright E2E tests
+production build
+
+Do not claim tests passed unless they were actually run.
+
+If a test fails:
+
+investigate
+fix the root cause
+rerun the test
+continue only when appropriate
+
+Add tests for new business-critical behavior.
+
+Manual verification
+
+For important user-facing flows, perform real verification where possible.
+
+Especially verify:
+
+authentication
+profile updates
+qualification management
+eligibility
+job discovery
+job application/source navigation
+admin workflows
+authorization isolation
+
+Do not substitute a unit test for a manual/E2E verification when the roadmap requires real browser behavior.
+
+Phase completion
+
+A phase is complete only when:
+
+implementation is complete
+tests are passing
+security is reviewed
+documentation is updated where needed
+no known blocking issue remains
+production build succeeds
+
+Then update:
+
+docs/PROJECT_STATUS.md
+
+with:
+
+completed phase
+implementation summary
+files changed
+database changes
+tests
+security verification
+known issues
+next phase
+
+Then continue automatically.
+
+Do not stop because of minor issues
+
+For ordinary implementation issues, solve them yourself.
+
+Examples:
+
+TypeScript errors
+test failures
+lint errors
+missing imports
+component bugs
+query bugs
+validation bugs
+UI bugs
+migration mistakes
+ordinary integration problems
+
+Investigate and fix them.
+
+Stop only for genuine blockers
+
+Stop and ask for a decision only when there is a genuine high-impact issue such as:
+
+contradictory requirements
+destructive data migration
+security model must be weakened
+impossible database requirement
+unresolved product decision that materially changes behavior
+external service/legal requirement that cannot safely be assumed
+
+When stopping, provide:
+
+The exact blocker.
+Relevant specification.
+Why implementation cannot safely continue.
+Possible options.
+Your recommended option.
+Product goal
+
+The final product should allow a user to:
+
+Register.
+Verify email.
+Complete profile.
+Add qualifications.
+Add applicable statuses.
+See government jobs.
+See jobs relevant to their profile.
+See eligibility status.
+Understand why they are or are not eligible.
+Filter/search jobs.
+Save jobs.
+Open the original government advertisement.
+Receive required notifications.
+
+Administrators should be able to:
+
+Manage government job data.
+Review imported jobs.
+Manage structured eligibility rules.
+Publish jobs.
+Manage sources.
+Maintain organizations/departments.
+Perform role-appropriate administrative actions.
+Maintain auditability.
+
+AI should assist with government-job extraction, but never become the final authority for eligibility.
+
+Final objective
+
+Do not treat this as a prototype where you only create screens.
+
+Build the complete production-quality application described by the specifications.
+
+Prioritize:
+
+Correctness
+Security
+Deterministic eligibility
+Data integrity
+Testability
+Maintainability
+Good UX
+Performance
+
+Start by inspecting the repository and determining the exact current implementation state.
+
+Then begin the first incomplete roadmap phase and continue through all remaining phases automatically.

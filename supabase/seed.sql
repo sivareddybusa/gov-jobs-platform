@@ -1,0 +1,15 @@
+-- Intentionally empty.
+--
+-- Reference data (states, categories, statuses, education_levels,
+-- job_statuses, admin_roles, generic qualifications) is seeded by a real,
+-- versioned migration — supabase/migrations/20260831120204_reference_data_seed.sql
+-- — not by this file, per DATABASE.md §34: "Seed/reference data is applied
+-- via a separate, idempotent seed script/migration". supabase/seed.sql only
+-- runs locally (via `supabase db reset`); a real migration reaches every
+-- environment including staging and production, which reference/lookup data
+-- that the application depends on at runtime genuinely needs.
+--
+-- This file exists only so `supabase db reset` doesn't warn about a missing
+-- seed.sql. Local-only development fixtures (test users, fixture jobs), if
+-- ever added, belong here — never real personal data or fake production
+-- data (DATABASE.md §35).
