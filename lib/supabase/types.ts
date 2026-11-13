@@ -244,6 +244,89 @@ export type Database = {
           },
         ];
       };
+      job_application_status_history: {
+        Row: {
+          application_id: string;
+          changed_at: string;
+          from_status: string | null;
+          id: string;
+          to_status: string;
+        };
+        Insert: {
+          application_id: string;
+          changed_at?: string;
+          from_status?: string | null;
+          id?: string;
+          to_status: string;
+        };
+        Update: {
+          application_id?: string;
+          changed_at?: string;
+          from_status?: string | null;
+          id?: string;
+          to_status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_application_status_history_application_id_fkey";
+            columns: ["application_id"];
+            isOneToOne: false;
+            referencedRelation: "job_applications";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      job_applications: {
+        Row: {
+          application_number: string | null;
+          applied_on: string | null;
+          created_at: string;
+          id: string;
+          job_post_id: string;
+          notes: string | null;
+          profile_id: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          application_number?: string | null;
+          applied_on?: string | null;
+          created_at?: string;
+          id?: string;
+          job_post_id: string;
+          notes?: string | null;
+          profile_id: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          application_number?: string | null;
+          applied_on?: string | null;
+          created_at?: string;
+          id?: string;
+          job_post_id?: string;
+          notes?: string | null;
+          profile_id?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_post_id_fkey";
+            columns: ["job_post_id"];
+            isOneToOne: false;
+            referencedRelation: "job_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_applications_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       job_documents: {
         Row: {
           checksum: string | null;
@@ -1198,6 +1281,72 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      supported_languages: {
+        Row: {
+          code: string;
+          created_at: string;
+          is_active: boolean;
+          name: string;
+          native_name: string;
+          sort_order: number;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          is_active?: boolean;
+          name: string;
+          native_name: string;
+          sort_order?: number;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          is_active?: boolean;
+          name?: string;
+          native_name?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      user_preferences: {
+        Row: {
+          email_notifications: boolean;
+          in_app_notifications: boolean;
+          language_code: string;
+          profile_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          email_notifications?: boolean;
+          in_app_notifications?: boolean;
+          language_code?: string;
+          profile_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          email_notifications?: boolean;
+          in_app_notifications?: boolean;
+          language_code?: string;
+          profile_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_language_code_fkey";
+            columns: ["language_code"];
+            isOneToOne: false;
+            referencedRelation: "supported_languages";
+            referencedColumns: ["code"];
+          },
+          {
+            foreignKeyName: "user_preferences_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       user_qualifications: {
         Row: {

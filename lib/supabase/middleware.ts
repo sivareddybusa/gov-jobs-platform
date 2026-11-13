@@ -7,7 +7,22 @@ import { clientEnv } from "@/lib/env.client";
 // components"). Prefix-matched, deny-list style — everything not listed
 // here stays public, so login/register/forgot-password/reset-password/the
 // email confirmation callback/the home page are never accidentally gated.
-const PROTECTED_PATH_PREFIXES = ["/dashboard", "/onboarding"];
+const PROTECTED_PATH_PREFIXES = [
+  "/dashboard",
+  "/onboarding",
+  "/eligible-jobs",
+  "/latest-notifications",
+  "/saved-jobs",
+  "/applications",
+  "/preparation",
+  "/study-plan",
+  "/study-materials",
+  "/practice",
+  "/mock-tests",
+  "/previous-papers",
+  "/performance",
+  "/settings",
+];
 const AUTH_ONLY_PATHS = ["/login", "/register"];
 
 /**

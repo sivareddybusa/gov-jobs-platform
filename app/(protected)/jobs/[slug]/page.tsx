@@ -7,11 +7,13 @@ import {
   getJobSourceById,
 } from "@/db/jobs";
 import { isJobSaved } from "@/db/saved-jobs";
+import { getApplicationForPost } from "@/db/job-applications";
 import { evaluateJobForUser } from "@/services/eligibility/evaluate";
 import { EligibilityBadge } from "@/components/jobs/eligibility-badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SaveButton } from "../save-button";
+import { TrackButton } from "../../applications/track-button";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -35,6 +37,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ slug
       post,
       result: await evaluateJobForUser(supabase, user.id, post.id),
       saved: await isJobSaved(supabase, user.id, post.id),
+      tracked: (await getApplicationForPost(supabase, user.id, post.id)) !== null,
     })),
   );
 
@@ -86,7 +89,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ slug
       <div>
         <h2 className="mb-3 text-sm font-semibold text-gray-900">Posts</h2>
         <ul className="flex flex-col gap-4">
-          {postsWithEligibility.map(({ post, result, saved }) => (
+          {postsWithEligibility.map(({ post, result, saved, tracked }) => (
             <li key={post.id}>
               <Card>
                 <div className="flex items-start justify-between gap-2">
@@ -105,6 +108,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ slug
                   <div className="flex flex-col items-end gap-2">
                     <EligibilityBadge status={result.status} />
                     <SaveButton jobPostId={post.id} initiallySaved={saved} />
+                    <TrackButton jobPostId={post.id} initiallyTracked={tracked} />
                   </div>
                 </div>
 

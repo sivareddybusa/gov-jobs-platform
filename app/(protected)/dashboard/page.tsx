@@ -111,6 +111,31 @@ export default async function DashboardPage() {
         }
       />
 
+      <section aria-label="Get started" className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Link href="/jobs" className="group">
+          <Card className="h-full transition-shadow group-hover:shadow-[var(--shadow-card-hover)]">
+            <h2 className="text-base font-semibold text-gray-900">Search Government Jobs</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Browse live notifications and see, with reasons, which posts you are eligible for.
+            </p>
+            <span className="mt-3 inline-block text-sm font-medium text-brand-600">
+              Search jobs →
+            </span>
+          </Card>
+        </Link>
+        <Link href="/preparation" className="group">
+          <Card className="h-full transition-shadow group-hover:shadow-[var(--shadow-card-hover)]">
+            <h2 className="text-base font-semibold text-gray-900">Prepare for a Government Job</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Choose the exam you are aiming for and build your preparation around it.
+            </p>
+            <span className="mt-3 inline-block text-sm font-medium text-brand-600">
+              Start preparing →
+            </span>
+          </Card>
+        </Link>
+      </section>
+
       {renderSection("Recommended for you", recommended)}
       {renderSection("Latest jobs", latest)}
       {renderSection("Closing soon", closingSoon)}

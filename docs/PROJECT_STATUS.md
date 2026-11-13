@@ -867,6 +867,28 @@ including the three new `/admin/imports*` routes, register as expected).
 review → approve → verify the created notification/post) is the natural next manual check
 whenever a real government notice URL is available to test against.
 
+## Expansion Phase 1 — Candidate navigation shell, preparation foundation, Application Tracker
+
+_Part of the Job Discovery + Exam Preparation expansion (see `PHASE0_AUDIT.md`). Decisions taken from the owner: English + Hindi with a language reference table, in-app notifications first (email designed-for), Application Tracker approved, Gemini and Google Search deferred._
+
+**Built**
+- Responsive candidate sidebar (persistent ≥ `lg`, drawer below) with the three required groups: Main menu, My Preparation, Account. `lib/navigation/candidate-nav.ts` holds the structure and a pure active-item helper.
+- New real routes under `app/(protected)`: `/eligible-jobs`, `/latest-notifications`, `/saved-jobs`, `/applications`, `/preparation`, `/preparation/exams`, `/study-plan`, `/study-materials`, `/practice`, `/mock-tests`, `/previous-papers`, `/performance`, `/settings`. Existing `/dashboard`, `/jobs`, `/jobs/[slug]`, `/profile` are unchanged in behaviour.
+- Dashboard "Search Government Jobs" / "Prepare for a Government Job" entry cards. `/preparation` and `/preparation/exams` are an honest first-run flow; the exam catalog does not exist yet (Phase 2), so they say so rather than showing fake data. Preparation sections that depend on later phases show a plainly-labelled "not available yet" state.
+- Application Tracker: "Track application" on each job post; `/applications` lists entries with status timeline, edit (status, applied date, application number, notes) and stop-tracking.
+- Settings: language (from `supported_languages`) and notification channel preferences. Email preference is stored but nothing sends email yet; the UI says so. Language choice is stored; UI translation is future work.
+- Proxy protected-prefix list extended to the new routes (pages still re-check via `requireUser`).
+
+**Database** (`20261112090000_phase1_applications_and_preferences.sql`): `supported_languages` (en, hi seeded; public read, admin write), `user_preferences`, `job_applications` (unique per user+post, status check, own-row RLS), `job_application_status_history` (written only by a security-definer trigger; owner read-only, no insert/update/delete policy). Tracker mutations are also audit-logged via `recordAuditEvent`.
+
+**Tests added:** nav structure (every item has a real page, active-state logic), application/preference validation, 13 real-DB tests (ownership RLS, IDOR write attempts, trigger-written history incl. non-status edits, no client write path to history, language FK, admin-only language writes), and 3 Playwright specs (sidebar + every destination + settings persistence + tracker lifecycle; anonymous redirect; mobile drawer).
+
+**Results:** typecheck, lint, Prettier, production build: PASS. Vitest 263/265 — the only failures are the two live-Gemini tests (HTTP 403, billing not enabled on the key; unchanged from baseline). Playwright 21/21 (18 existing + 3 new) against a production build.
+
+**Environment notes:** the host was heavily loaded (load average > 100, security-software scanning) so E2E needs `--workers=2 --timeout=120000` locally; the default 30 s timeout produced load-induced failures in long multi-step specs that pass in isolation. Initial git commit made before this phase (secrets, `.env.local`, build output and local DB data excluded).
+
+**Known limits:** no exam catalog yet, language is stored but UI is English-only, email notifications not delivered, `/jobs/eligible`-style paths deliberately avoided (`/eligible-jobs` etc.) so they cannot collide with job slugs.
+
 ## Next phase: Phase 14 — Production Deployment
 
 All planned MVP phases (Profile, Eligibility Engine, Job Data + Admin Management, Dashboard/

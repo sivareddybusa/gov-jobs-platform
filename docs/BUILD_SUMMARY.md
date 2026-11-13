@@ -82,6 +82,10 @@ npm run dev -- -p 3001      # app on http://localhost:3001
 
 Port 3000 is used by another container on this machine, but Supabase's `site_url` is `http://localhost:3000`, so confirmation-email links must have `3000` changed to `3001`. Requires `.env.local` with Supabase keys and `GEMINI_API_KEY` for ingestion.
 
+## 8b. Expansion Phase 1 (added after this snapshot)
+
+Candidate sidebar shell, 13 new routes, preparation first-run flow, Settings (language + notification preferences), and the Application Tracker (`job_applications` + trigger-written status history). Details in `docs/PROJECT_STATUS.md`. The exam catalog and everything downstream is Phase 2+.
+
 ## 9. Known gaps / not built
 
 - Phase 14/15: production deployment and verification (needs real Vercel + production Supabase credentials).
@@ -91,4 +95,4 @@ Port 3000 is used by another container on this machine, but Supabase's `site_url
 - No live end-to-end ingestion run against a real notice URL has been done through the UI.
 - Playwright E2E not re-run since the UI redesign.
 - Dashboard/search scan the 50 most recent notifications (bounded by design for MVP scale).
-- Nothing has been committed to git yet.
+- Git: initial commit made at the start of Expansion Phase 1.
