@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CANDIDATE_NAV, isNavItemActive } from "@/lib/navigation/candidate-nav";
+import { CANDIDATE_NAV, adminNavFor, isNavItemActive } from "@/lib/navigation/candidate-nav";
 
 const items = CANDIDATE_NAV.flatMap((g) => g.items);
 
@@ -36,5 +36,30 @@ describe("candidate navigation", () => {
   it("does not match on a mere string prefix", () => {
     expect(isNavItemActive("/jobsearch", "/jobs")).toBe(false);
     expect(isNavItemActive("/practice-extra", "/practice")).toBe(false);
+  });
+});
+
+describe("admin navigation", () => {
+  it("shows nothing to non-admins", () => {
+    expect(adminNavFor(null)).toEqual([]);
+  });
+  it("filters items by role tier", () => {
+    const labels = (t: Parameters<typeof adminNavFor>[0]) =>
+      adminNavFor(t).flatMap((g) => g.items.map((i) => i.label));
+    expect(labels("reviewer")).toContain("Exams");
+    expect(labels("reviewer")).not.toContain("AI providers");
+    expect(labels("admin")).not.toContain("AI providers");
+    expect(labels("super_admin")).toEqual(expect.arrayContaining(["AI providers", "Roles"]));
+  });
+  it("points every admin item at a real admin page", () => {
+    for (const item of adminNavFor("super_admin").flatMap((g) => g.items)) {
+      const page = join(process.cwd(), "app", "(admin)", item.href, "page.tsx");
+      expect(existsSync(page), `${item.href} has no page`).toBe(true);
+    }
+  });
+  it("highlights only the most specific admin item", () => {
+    expect(isNavItemActive("/admin/exams", "/admin/exams")).toBe(true);
+    expect(isNavItemActive("/admin/exams", "/admin")).toBe(false);
+    expect(isNavItemActive("/admin", "/admin")).toBe(true);
   });
 });

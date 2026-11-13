@@ -3,13 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CANDIDATE_NAV, isNavItemActive } from "@/lib/navigation/candidate-nav";
+import { CANDIDATE_NAV, isNavItemActive, type NavGroup } from "@/lib/navigation/candidate-nav";
 import { cn } from "@/lib/cn";
 
-function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function NavList({
+  pathname,
+  groups,
+  onNavigate,
+}: {
+  pathname: string;
+  groups: NavGroup[];
+  onNavigate?: () => void;
+}) {
   return (
     <nav aria-label="Main" className="flex flex-col gap-6">
-      {CANDIDATE_NAV.map((group) => (
+      {groups.map((group) => (
         <div key={group.heading}>
           <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
             {group.heading}
@@ -47,8 +55,16 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
  * bar button) below the `lg` breakpoint. Navigation items are plain links, so
  * the menu works as ordinary server-rendered navigation.
  */
-export function CandidateSidebar({ footer }: { footer?: React.ReactNode }) {
+export function CandidateSidebar({
+  footer,
+  extraGroups = [],
+}: {
+  footer?: React.ReactNode;
+  /** Extra groups (e.g. "Admin") appended below the candidate menu. */
+  extraGroups?: NavGroup[];
+}) {
   const pathname = usePathname();
+  const groups = [...CANDIDATE_NAV, ...extraGroups];
   // The drawer is "open" only for the path it was opened on, so navigating
   // closes it without a setState-in-effect.
   const [openedOn, setOpenedOn] = useState<string | null>(null);
@@ -84,7 +100,7 @@ export function CandidateSidebar({ footer }: { footer?: React.ReactNode }) {
       </button>
 
       <aside className="fixed bottom-0 left-0 top-[57px] z-10 hidden w-64 overflow-y-auto border-r border-gray-200 bg-white px-3 py-5 lg:block">
-        <NavList pathname={pathname} />
+        <NavList pathname={pathname} groups={groups} />
         {footer ? <div className="mt-6 border-t border-gray-100 pt-4">{footer}</div> : null}
       </aside>
 
@@ -102,7 +118,7 @@ export function CandidateSidebar({ footer }: { footer?: React.ReactNode }) {
             onClick={() => setOpen(false)}
           />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] overflow-y-auto bg-white px-3 py-5 shadow-xl">
-            <NavList pathname={pathname} onNavigate={() => setOpen(false)} />
+            <NavList pathname={pathname} groups={groups} onNavigate={() => setOpen(false)} />
             {footer ? <div className="mt-6 border-t border-gray-100 pt-4">{footer}</div> : null}
           </div>
         </div>

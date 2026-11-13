@@ -42,6 +42,16 @@ export const extractExamFromText: ExamExtractor = async (pageText) => {
   } catch {
     throw new Error("The extractor returned invalid JSON.");
   }
+  // A page with no exam info (e.g. a homepage rendered by JavaScript) often comes
+  // back with the required fields omitted. That means "not an exam page", which is
+  // a normal skip, not a failure.
+  if (
+    typeof json !== "object" ||
+    json === null ||
+    (json as { isExamPage?: unknown }).isExamPage !== true
+  ) {
+    return { isExamPage: false, name: "(not an exam page)", category: "other" };
+  }
   const parsed = examExtractionSchema.safeParse(json);
   if (!parsed.success) throw new Error("The extractor output failed validation.");
   return parsed.data;

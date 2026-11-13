@@ -74,6 +74,17 @@ test.describe("AI providers page", () => {
     expect(grant.ok).toBe(true);
   }
 
+  async function completeOnboarding(page: import("@playwright/test").Page) {
+    await page.goto("/onboarding");
+    await page.waitForSelector("#dateOfBirth");
+    await page.fill("#dateOfBirth", "1998-05-14");
+    await page.selectOption("#categoryId", { label: "General / Unreserved" });
+    await page.selectOption("#stateId", { label: "Telangana" });
+    await page.selectOption("#educationLevelId", { label: "Undergraduate / Bachelor's Degree" });
+    await page.click('button:has-text("Save and continue")');
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+  }
+
   test("super admin adds keys and switches the one in use", async ({ page }) => {
     await signUpWithRole(page, superEmail, "super_admin");
     await page.goto("/admin/ai-providers");
@@ -113,10 +124,22 @@ test.describe("AI providers page", () => {
     await expect(cRow.getByText("In use", { exact: true })).toBeVisible();
     await expect(oRow.getByText("Not in use")).toBeVisible(); // everything else is unused
     await expect(page.getByText("In use", { exact: true })).toHaveCount(1);
+
+    // The Admin group in the candidate sidebar leads here for a super admin.
+    await completeOnboarding(page);
+    const aside = page.locator("aside");
+    await expect(aside.getByText("Admin", { exact: true })).toBeVisible();
+    await aside.getByRole("link", { name: "AI providers" }).click();
+    await expect(page).toHaveURL(/\/admin\/ai-providers/);
   });
 
   test("a plain admin cannot open the page", async ({ page }) => {
     await signUpWithRole(page, adminEmail, "admin");
+    await completeOnboarding(page);
+    const aside = page.locator("aside");
+    await expect(aside.getByRole("link", { name: "Exams" })).toBeVisible();
+    await expect(aside.getByRole("link", { name: "AI providers" })).toHaveCount(0);
+    await expect(aside.getByRole("link", { name: "Roles" })).toHaveCount(0);
     await page.goto("/admin/ai-providers");
     // Kept out of the page (redirected away), never shown the keys UI.
     await expect(page).not.toHaveURL(/ai-providers/);

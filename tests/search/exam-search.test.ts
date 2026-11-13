@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ExamSearchUnavailableError,
   GoogleProgrammableSearchProvider,
+  SerperSearchProvider,
   getExamSearchProvider,
   normalizeResults,
 } from "@/lib/search/exam-search";
@@ -77,5 +78,42 @@ describe("GoogleProgrammableSearchProvider", () => {
     const err = await provider.search("x").catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ExamSearchUnavailableError);
     expect((err as Error).message).not.toContain("secret-key");
+  });
+});
+
+describe("SerperSearchProvider", () => {
+  it("posts the query with the key header and normalizes organic results", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        organic: [
+          { title: "SSC CGL", link: "https://ssc.gov.in/x", snippet: "s" },
+          { title: "http", link: "http://ssc.gov.in/y", snippet: "" },
+        ],
+      }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const out = await new SerperSearchProvider("serper-secret").search("q");
+    expect(out.map((r) => r.url)).toEqual(["https://ssc.gov.in/x"]);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://google.serper.dev/search");
+    expect((init.headers as Record<string, string>)["X-API-KEY"]).toBe("serper-secret");
+  });
+  it("reports only the status on failure, never the key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 403, json: async () => ({}) })),
+    );
+    const err = await new SerperSearchProvider("serper-secret").search("q").catch((e: Error) => e);
+    expect((err as Error).message).toBe("The search service returned HTTP 403.");
+  });
+  it("is preferred by getExamSearchProvider when its key is set", () => {
+    vi.stubEnv("SERPER_API_KEY", "k");
+    vi.stubEnv("GOOGLE_SEARCH_API_KEY", "g");
+    vi.stubEnv("GOOGLE_SEARCH_ENGINE_ID", "cx");
+    expect(getExamSearchProvider()?.name).toBe("serper");
+    vi.stubEnv("SERPER_API_KEY", "");
+    expect(getExamSearchProvider()?.name).toBe("google_programmable_search");
   });
 });

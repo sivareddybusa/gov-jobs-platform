@@ -33,8 +33,7 @@ export default async function AdminExamsPage() {
         <Card className="mb-4 border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-900">
           Automatic sync is not configured:{" "}
           {[
-            !availability.search &&
-              "Google Search (GOOGLE_SEARCH_API_KEY, GOOGLE_SEARCH_ENGINE_ID)",
+            !availability.search && "a search provider (SERPER_API_KEY)",
             !availability.extractor && "an AI provider (Admin → AI providers)",
           ]
             .filter(Boolean)

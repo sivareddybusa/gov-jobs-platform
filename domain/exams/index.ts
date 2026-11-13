@@ -50,11 +50,13 @@ export function slugify(input: string): string {
 }
 
 /**
- * Official hosts: government / NIC / academic-institution domains and IBPS.
+ * Official hosts: government (gov.in), NIC (nic.in), IBPS and NTA by name. Not blanket
+ * *.ac.in: that covers every college and any blog hosted on one.
  * Anchored so "evilgov.in" and "gov.in@evil.com" do not match. Mirrors the
  * database function `is_official_exam_url` (the authoritative check).
  */
-const OFFICIAL_URL = /^https:\/\/([a-z0-9-]+\.)*(gov\.in|nic\.in|ac\.in|ibps\.in)(:[0-9]+)?(\/|$)/;
+const OFFICIAL_URL =
+  /^https:\/\/([a-z0-9-]+\.)*(gov\.in|nic\.in|ibps\.in|nta\.ac\.in)(:[0-9]+)?(\/|$)/;
 
 export function isOfficialExamUrl(url: string | null | undefined): boolean {
   return Boolean(url) && OFFICIAL_URL.test(url!.toLowerCase());

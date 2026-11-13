@@ -9,7 +9,7 @@ import { extractText } from "@/lib/ingestion/extract-text";
 import { refreshStaleExams, runExamSync, type PageReader, type SyncSummary } from "./sync";
 
 const readPage: PageReader = async (url) => {
-  const res = await safeFetch(url, { timeoutMs: 15_000, maxBytes: 5 * 1024 * 1024 });
+  const res = await safeFetch(url, { timeoutMs: 30_000, maxBytes: 5 * 1024 * 1024 });
   const { text } = await extractText(res.body);
   return { text, finalUrl: res.finalUrl };
 };

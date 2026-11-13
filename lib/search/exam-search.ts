@@ -72,6 +72,45 @@ export class GoogleProgrammableSearchProvider implements ExamSearchProvider {
   }
 }
 
+const serperResponseSchema = z.object({
+  organic: z
+    .array(
+      z.object({
+        title: z.string().default(""),
+        link: z.string(),
+        snippet: z.string().default(""),
+      }),
+    )
+    .default([]),
+});
+
+/** Serper.dev: returns Google results via a simple API. The key stays server-side. */
+export class SerperSearchProvider implements ExamSearchProvider {
+  readonly name = "serper";
+  constructor(private readonly apiKey: string) {}
+
+  async search(query: string): Promise<ExternalExamResult[]> {
+    let res: Response;
+    try {
+      res = await fetch("https://google.serper.dev/search", {
+        method: "POST",
+        headers: { "X-API-KEY": this.apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ q: query, gl: "in", num: 10 }),
+        signal: AbortSignal.timeout(8000),
+        cache: "no-store",
+      });
+    } catch {
+      throw new ExamSearchUnavailableError("The search service did not respond.");
+    }
+    if (!res.ok) {
+      throw new ExamSearchUnavailableError(`The search service returned HTTP ${res.status}.`);
+    }
+    const parsed = serperResponseSchema.safeParse(await res.json().catch(() => null));
+    if (!parsed.success) throw new ExamSearchUnavailableError("Unexpected search response.");
+    return normalizeResults(parsed.data.organic.map((i) => ({ ...i, url: i.link })));
+  }
+}
+
 /** Keeps only https links, derives the host and trims text. Pure; unit-tested. */
 export function normalizeResults(
   raw: Array<{ title: string; url: string; snippet: string }>,
@@ -97,8 +136,10 @@ export function normalizeResults(
   return out;
 }
 
-/** The configured provider, or null when external search is not set up. */
+/** The configured provider (Serper preferred, else Google Programmable Search), or null. */
 export function getExamSearchProvider(): ExamSearchProvider | null {
+  const serper = process.env["SERPER_API_KEY"];
+  if (serper) return new SerperSearchProvider(serper);
   const key = process.env["GOOGLE_SEARCH_API_KEY"];
   const cx = process.env["GOOGLE_SEARCH_ENGINE_ID"];
   if (!key || !cx) return null;

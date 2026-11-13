@@ -39,7 +39,33 @@ export const CANDIDATE_NAV: NavGroup[] = [
   },
 ];
 
-const ALL_HREFS = CANDIDATE_NAV.flatMap((g) => g.items.map((i) => i.href));
+/** Admin destinations shown in the sidebar to signed-in admins, filtered by role tier. */
+export type AdminTier = "reviewer" | "editor" | "admin" | "super_admin";
+const TIER_RANK: Record<AdminTier, number> = { reviewer: 1, editor: 2, admin: 3, super_admin: 4 };
+
+const ADMIN_ITEMS: Array<NavItem & { minTier: AdminTier }> = [
+  { label: "Admin overview", href: "/admin", minTier: "reviewer" },
+  { label: "Organizations", href: "/admin/organizations", minTier: "reviewer" },
+  { label: "Sources", href: "/admin/sources", minTier: "reviewer" },
+  { label: "Jobs", href: "/admin/jobs", minTier: "reviewer" },
+  { label: "Exams", href: "/admin/exams", minTier: "reviewer" },
+  { label: "AI imports", href: "/admin/imports", minTier: "reviewer" },
+  { label: "AI providers", href: "/admin/ai-providers", minTier: "super_admin" },
+  { label: "Roles", href: "/admin/roles", minTier: "super_admin" },
+];
+
+/** The "Admin" sidebar group for a user's highest tier, or none for non-admins. */
+export function adminNavFor(tier: AdminTier | null): NavGroup[] {
+  if (!tier) return [];
+  const items = ADMIN_ITEMS.filter((i) => TIER_RANK[i.minTier] <= TIER_RANK[tier]).map(
+    ({ label, href }) => ({ label, href }),
+  );
+  return [{ heading: "Admin", items }];
+}
+
+const ALL_HREFS = [...CANDIDATE_NAV, ...adminNavFor("super_admin")].flatMap((g) =>
+  g.items.map((i) => i.href),
+);
 
 /**
  * An item is active when the path equals it or is nested under it, unless a

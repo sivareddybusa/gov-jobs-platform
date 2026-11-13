@@ -22,9 +22,12 @@ describe("isOfficialExamUrl / isOfficialHost", () => {
     expect(isOfficialExamUrl("https://www.ibps.in")).toBe(true);
     expect(isOfficialExamUrl("https://upsc.gov.in:443/x")).toBe(true);
     expect(isOfficialHost("recruitment.nic.in")).toBe(true);
+    expect(isOfficialExamUrl("https://nta.ac.in/x")).toBe(true);
   });
   it("rejects look-alikes, http, userinfo tricks and non-official hosts", () => {
     expect(isOfficialExamUrl("http://ssc.gov.in")).toBe(false);
+    expect(isOfficialExamUrl("https://huroorkee.ac.in/blog/x")).toBe(false); // college blog
+    expect(isOfficialExamUrl("https://evilnta.ac.in")).toBe(false);
     expect(isOfficialExamUrl("https://evilgov.in")).toBe(false);
     expect(isOfficialExamUrl("https://gov.in.evil.com")).toBe(false);
     expect(isOfficialExamUrl("https://gov.in@evil.com")).toBe(false);

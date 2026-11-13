@@ -33,21 +33,33 @@ export type SyncSummary = {
   failed: number;
 };
 
-const MAX_QUERIES = 10;
-const MAX_PAGES = 8;
+const MAX_QUERIES = 12;
+const MAX_ORG_QUERIES = 2;
+const MAX_PAGES = 12;
 
 function emptySummary(): SyncSummary {
   return { queries: 0, pagesRead: 0, created: 0, refreshed: 0, skipped: 0, failed: 0 };
 }
 
-/** Search terms (not catalog data): organizations we already track + exam categories. */
+/**
+ * Search terms (not catalog data): every exam category first, then a few tracked
+ * organizations that have an official website (so leftover/test orgs never crowd
+ * out the real searches).
+ */
 export async function buildSyncQueries(db: DB): Promise<string[]> {
-  const { data } = await db.from("organizations").select("name").order("name").limit(MAX_QUERIES);
-  const orgQueries = (data ?? []).map((o) => `${o.name} recruitment examination official`);
+  const { data } = await db
+    .from("organizations")
+    .select("name")
+    .not("website_url", "is", null)
+    .order("name")
+    .limit(MAX_ORG_QUERIES);
+  // Ask the search engine for official domains only; results are filtered again in code.
+  const officialOnly = "(site:gov.in OR site:nic.in OR site:ibps.in OR site:nta.ac.in)";
   const categoryQueries = Object.values(EXAM_CATEGORY_LABELS)
     .filter((label) => label !== "Other")
-    .map((label) => `${label} recruitment examination India official notification`);
-  return [...orgQueries, ...categoryQueries].slice(0, MAX_QUERIES);
+    .map((label) => `${label} recruitment examination India notification ${officialOnly}`);
+  const orgQueries = (data ?? []).map((o) => `${o.name} recruitment examination ${officialOnly}`);
+  return [...categoryQueries, ...orgQueries].slice(0, MAX_QUERIES);
 }
 
 /** Cheap guard against invention: the extracted name must literally appear on the page. */

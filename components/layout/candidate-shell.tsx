@@ -4,13 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { CandidateSidebar } from "@/components/layout/candidate-sidebar";
+import type { NavGroup } from "@/lib/navigation/candidate-nav";
 
 /**
  * App frame for signed-in candidates: top bar + sidebar + content. During
  * onboarding (profile not complete yet) the sidebar is hidden — every
  * destination would just redirect back to onboarding.
  */
-export function CandidateShell({ signOut, children }: { signOut: ReactNode; children: ReactNode }) {
+export function CandidateShell({
+  signOut,
+  adminGroups = [],
+  children,
+}: {
+  signOut: ReactNode;
+  adminGroups?: NavGroup[];
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const showNav = !pathname.startsWith("/onboarding");
 
@@ -22,7 +31,7 @@ export function CandidateShell({ signOut, children }: { signOut: ReactNode; chil
       <header className="sticky top-0 z-20 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
-            {showNav ? <CandidateSidebar /> : null}
+            {showNav ? <CandidateSidebar extraGroups={adminGroups} /> : null}
             <Link
               href={showNav ? "/dashboard" : "/onboarding"}
               className="text-sm font-semibold tracking-tight text-gray-900"

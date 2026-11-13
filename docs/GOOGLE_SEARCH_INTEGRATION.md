@@ -16,7 +16,7 @@ Code: `services/exams/sync.ts` (pure pipeline, injected providers), `services/ex
 
 ## Trust rules (enforced in code AND the database)
 
-- Official = `https://` host under `gov.in`, `nic.in`, `ac.in` or `ibps.in` (anchored; `evilgov.in`, `gov.in@evil.com`, `evil.com/gov.in` do not match). The DB function `is_official_exam_url` and the constraint `exams_auto_verified_requires_official_host` re-check this: an `auto_verified` row cannot exist unless both `official_website_url` and `source_url` are official.
+- Official = `https://` host under `gov.in`, `nic.in`, `ibps.in` or `nta.ac.in` (blanket `*.ac.in` was removed after a college blog was auto-published in the first real run) (anchored; `evilgov.in`, `gov.in@evil.com`, `evil.com/gov.in` do not match). The DB function `is_official_exam_url` and the constraint `exams_auto_verified_requires_official_host` re-check this: an `auto_verified` row cannot exist unless both `official_website_url` and `source_url` are official.
 - AI output is untrusted: the exam's **website is derived from the page we fetched, never from model output**; the extracted name must appear verbatim in the page text, otherwise the page is skipped (guards against invention); redirects off an official host are skipped.
 - Non-official results are never fetched, never stored.
 - Re-syncing refreshes description/source/timestamps only. It **never changes status or verification**, so an admin takedown (draft/archived) survives the next sync.
@@ -27,7 +27,8 @@ Code: `services/exams/sync.ts` (pure pipeline, injected providers), `services/ex
 
 | Variable | Purpose |
 |---|---|
-| `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_ENGINE_ID` | Programmable Search (server-only). Restrict the engine to `*.gov.in`, `*.nic.in`, `*.ac.in`, `ibps.in` for best results. |
+| `SERPER_API_KEY` | Preferred search provider (serper.dev, Google results). Queries add `site:gov.in OR site:nic.in OR site:ibps.in OR site:nta.ac.in`. |
+| `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_ENGINE_ID` | Alternative: Google Programmable Search. New Google projects are denied access to this API ("project does not have access"), so Serper is the default route. |
 | AI provider | The extractor uses whichever LLM is "In use" on Admin → AI providers (see `docs/AI_PROVIDERS.md`); `GEMINI_API_KEY` is only a fallback. |
 | `CRON_SECRET` | Optional. Enables `GET /api/cron/exam-sync` with `Authorization: Bearer <secret>` for scheduled runs (e.g. daily). Disabled when unset. |
 
