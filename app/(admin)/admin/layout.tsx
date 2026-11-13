@@ -5,7 +5,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Lowest admin tier (reviewer) may enter the admin area at all — each page
   // underneath re-checks its own required tier for writes (defense in
   // depth, same pattern as app/(protected)/layout.tsx's requireUser()).
-  await requireAdminRole("reviewer");
+  const { supabase, user } = await requireAdminRole("reviewer");
+  const { data: isSuperAdmin } = await supabase.rpc("is_admin", {
+    check_user_id: user.id,
+    min_role: "super_admin",
+  });
 
   return (
     <div className="min-h-screen bg-[#f7f8fb]">
@@ -33,9 +37,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/jobs" className="font-medium text-gray-300 hover:text-white">
               Jobs
             </Link>
+            <Link href="/admin/exams" className="font-medium text-gray-300 hover:text-white">
+              Exams
+            </Link>
             <Link href="/admin/imports" className="font-medium text-gray-300 hover:text-white">
               AI imports
             </Link>
+            {isSuperAdmin === true ? (
+              <Link
+                href="/admin/ai-providers"
+                className="font-medium text-gray-300 hover:text-white"
+              >
+                AI providers
+              </Link>
+            ) : null}
             <Link href="/admin/roles" className="font-medium text-gray-300 hover:text-white">
               Roles
             </Link>

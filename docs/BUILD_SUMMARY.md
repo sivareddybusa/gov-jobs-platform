@@ -86,6 +86,10 @@ Port 3000 is used by another container on this machine, but Supabase's `site_url
 
 Candidate sidebar shell, 13 new routes, preparation first-run flow, Settings (language + notification preferences), and the Application Tracker (`job_applications` + trigger-written status history). Details in `docs/PROJECT_STATUS.md`. The exam catalog and everything downstream is Phase 2+.
 
+## 8c. Expansion Phase 2
+
+Verified exam catalog (admin create/verify/publish, DB-enforced), candidate exam discovery, primary/secondary preparation targets with preserved history, and an optional external-search provider for admins. Details in `docs/PROJECT_STATUS.md` and `docs/GOOGLE_SEARCH_INTEGRATION.md`.
+
 ## 9. Known gaps / not built
 
 - Phase 14/15: production deployment and verification (needs real Vercel + production Supabase credentials).
@@ -96,3 +100,13 @@ Candidate sidebar shell, 13 new routes, preparation first-run flow, Settings (la
 - Playwright E2E not re-run since the UI redesign.
 - Dashboard/search scan the 50 most recent notifications (bounded by design for MVP scale).
 - Git: initial commit made at the start of Expansion Phase 1.
+
+
+## Phase 2 revision — automatic catalog (owner decision)
+
+Admin authoring of exams was removed. Exams are now fetched from Google + official pages, extracted with Gemini, validated, and **auto-published only from official domains** (`gov.in`, `nic.in`, `ac.in`, `ibps.in`), enforced by DB constraint `exams_auto_verified_requires_official_host`. Admin Exams is a read-only monitor (sync status/errors, unpublish/restore/block, "Sync from Google now"). Migration `20261113100000_exam_catalog_auto_sync.sql`; pipeline `services/exams/*`; details and trust rules in `docs/GOOGLE_SEARCH_INTEGRATION.md`. Live Google/Gemini runs are untested (no credentials/billing).
+
+
+## Switchable LLM provider page
+
+`/admin/ai-providers` (super_admin only): save encrypted API keys for Gemini, OpenAI, Anthropic and Cloudflare Workers AI and choose the one "In use". Job import and exam sync now go through `lib/llm`. Migration `20261113110000_llm_credentials.sql`; see `docs/AI_PROVIDERS.md`. Needs `APP_ENCRYPTION_KEY` in the server env. Live provider calls untested.

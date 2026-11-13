@@ -15,7 +15,8 @@ import type { Json } from "@/lib/supabase/types";
  * is a record of what happened, not an authorization check itself.
  */
 export async function recordAuditEvent(event: {
-  actorId: string;
+  /** null = the system itself (e.g. the scheduled exam sync). */
+  actorId: string | null;
   eventType: string;
   entityTable: string;
   entityId: string;

@@ -203,6 +203,89 @@ export type Database = {
         };
         Relationships: [];
       };
+      exams: {
+        Row: {
+          category: string;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          discovered_via: string;
+          id: string;
+          last_synced_at: string | null;
+          name: string;
+          official_website_url: string | null;
+          organization_id: string | null;
+          published_at: string | null;
+          short_name: string | null;
+          slug: string;
+          source_url: string | null;
+          status: string;
+          sync_error: string | null;
+          sync_status: string | null;
+          translations: Json;
+          updated_at: string;
+          verification_status: string;
+          verified_at: string | null;
+          verified_by: string | null;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          discovered_via?: string;
+          id?: string;
+          last_synced_at?: string | null;
+          name: string;
+          official_website_url?: string | null;
+          organization_id?: string | null;
+          published_at?: string | null;
+          short_name?: string | null;
+          slug: string;
+          source_url?: string | null;
+          status?: string;
+          sync_error?: string | null;
+          sync_status?: string | null;
+          translations?: Json;
+          updated_at?: string;
+          verification_status?: string;
+          verified_at?: string | null;
+          verified_by?: string | null;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          discovered_via?: string;
+          id?: string;
+          last_synced_at?: string | null;
+          name?: string;
+          official_website_url?: string | null;
+          organization_id?: string | null;
+          published_at?: string | null;
+          short_name?: string | null;
+          slug?: string;
+          source_url?: string | null;
+          status?: string;
+          sync_error?: string | null;
+          sync_status?: string | null;
+          translations?: Json;
+          updated_at?: string;
+          verification_status?: string;
+          verified_at?: string | null;
+          verified_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "exams_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       job_age_rules: {
         Row: {
           age_cutoff_date: string;
@@ -985,6 +1068,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      llm_credentials: {
+        Row: {
+          account_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          encrypted_key: string;
+          id: string;
+          is_active: boolean;
+          key_last4: string;
+          label: string;
+          model: string;
+          provider: string;
+          updated_at: string;
+        };
+        Insert: {
+          account_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          encrypted_key: string;
+          id?: string;
+          is_active?: boolean;
+          key_last4: string;
+          label: string;
+          model: string;
+          provider: string;
+          updated_at?: string;
+        };
+        Update: {
+          account_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          encrypted_key?: string;
+          id?: string;
+          is_active?: boolean;
+          key_last4?: string;
+          label?: string;
+          model?: string;
+          provider?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       organizations: {
         Row: {
           created_at: string;
@@ -1309,6 +1434,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_exam_targets: {
+        Row: {
+          created_at: string;
+          ended_at: string | null;
+          exam_id: string;
+          id: string;
+          is_primary: boolean;
+          profile_id: string;
+          status: string;
+          target_year: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          ended_at?: string | null;
+          exam_id: string;
+          id?: string;
+          is_primary?: boolean;
+          profile_id: string;
+          status?: string;
+          target_year?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          ended_at?: string | null;
+          exam_id?: string;
+          id?: string;
+          is_primary?: boolean;
+          profile_id?: string;
+          status?: string;
+          target_year?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_exam_targets_exam_id_fkey";
+            columns: ["exam_id"];
+            isOneToOne: false;
+            referencedRelation: "exams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "user_exam_targets_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_preferences: {
         Row: {
           email_notifications: boolean;
@@ -1398,6 +1574,12 @@ export type Database = {
       is_admin: {
         Args: { check_user_id: string; min_role: string };
         Returns: boolean;
+      };
+      is_official_exam_url: { Args: { url: string }; Returns: boolean };
+      set_active_llm_credential: { Args: { p_id: string }; Returns: undefined };
+      set_primary_exam_target: {
+        Args: { target_id: string };
+        Returns: undefined;
       };
     };
     Enums: {

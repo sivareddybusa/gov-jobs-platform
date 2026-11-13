@@ -3,7 +3,7 @@ import type { Database } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeFetch, SafeFetchError } from "@/lib/ingestion/safe-fetch";
 import { extractText, DocumentTypeError } from "@/lib/ingestion/extract-text";
-import { extractJobFromText, AI_PROVIDER, AI_MODEL } from "@/lib/ingestion/ai-extract";
+import { extractJobWithMeta } from "@/lib/ingestion/ai-extract";
 import {
   startIngestionSchema,
   rejectImportSchema,
@@ -106,8 +106,10 @@ export async function startIngestionUseCase(
   await updateJobImportPipelineState(admin, importRow.id, { status: "extracted" });
 
   let extraction: JobExtraction;
+  let aiProvider: string;
+  let aiModel: string;
   try {
-    extraction = await extractJobFromText(text);
+    ({ extraction, provider: aiProvider, model: aiModel } = await extractJobWithMeta(text));
   } catch (err) {
     const message = err instanceof Error ? err.message : "AI extraction failed.";
     await updateJobImportPipelineState(admin, importRow.id, {
@@ -122,8 +124,8 @@ export async function startIngestionUseCase(
 
   await updateJobImportPipelineState(admin, importRow.id, {
     status: nextStatus,
-    ai_provider: AI_PROVIDER,
-    ai_model: AI_MODEL,
+    ai_provider: aiProvider,
+    ai_model: aiModel,
     raw_extraction_output: extraction,
     extracted_at: new Date().toISOString(),
     validation_errors: problems.length > 0 ? { stage: "business_validation", problems } : null,

@@ -889,6 +889,19 @@ _Part of the Job Discovery + Exam Preparation expansion (see `PHASE0_AUDIT.md`).
 
 **Known limits:** no exam catalog yet, language is stored but UI is English-only, email notifications not delivered, `/jobs/eligible`-style paths deliberately avoided (`/eligible-jobs` etc.) so they cannot collide with job slugs.
 
+## Expansion Phase 2 — Exam catalog, discovery and preparation targets
+
+**Built**
+- Database (`20261113090000_phase2_exam_catalog.sql`, `20261113090100_set_primary_exam_target.sql`): `exams` (slug, category, organization, official/source URLs, `translations` jsonb for future languages, `status` draft/published/archived, `verification_status`, `discovered_via`), `user_exam_targets` (primary/secondary, active/paused/removed, history preserved, no DELETE policy), atomic `set_primary_exam_target()`.
+- Integrity enforced in the database, not just the UI: a published exam must be admin-verified and have an official website (CHECK); only an admin may create a pre-verified exam or change verification/publication (trigger); candidates see only published + verified exams (RLS) and can only target those; one primary target per user (partial unique index); only an active target can be primary.
+- Candidate: `/preparation/exams` (search by name + category, verified badge, "Start preparing"), `/preparation/exams/[slug]` (exam overview, official links, live notifications from the exam's organization with eligibility, start/manage state), `/preparation` (primary/secondary targets; make primary, pause, resume, remove; "Previously prepared" history).
+- Admin: `/admin/exams` (list with verification/status badges), create/edit, verify / reject / publish / unpublish / archive (admin only), `/admin/exams/discover` (external search leads, saved as unverified drafts). All writes audit-logged.
+- External discovery behind a provider interface (`lib/search/exam-search.ts`); Google Programmable Search implemented, off unless `GOOGLE_SEARCH_API_KEY`/`GOOGLE_SEARCH_ENGINE_ID` are set; documented fallback. See `GOOGLE_SEARCH_INTEGRATION.md`.
+
+**Tests added:** domain (slugify, publish rule), validation, search provider (mocked fetch; key never leaks; https-only), 17 real-DB tests (public visibility, editor/admin trigger rights, publish constraint, target ownership/IDOR, one-primary, atomic switch, history preserved), 3 Playwright specs (admin create→verify→publish; candidate discovery hides drafts + 404, start/primary/pause/resume/remove; access control). A test caught and fixed an accent-handling bug in `slugify`.
+
+**Not done / limits:** no Google credentials, so live external search is untested (provider is unit-tested with mocked HTTP); the catalog has no bundled data — exams come from admins (two sample entries may exist in a local database); syllabus and per-exam content arrive in later phases; exam name/description translations are stored as `translations` but not yet rendered.
+
 ## Next phase: Phase 14 — Production Deployment
 
 All planned MVP phases (Profile, Eligibility Engine, Job Data + Admin Management, Dashboard/
@@ -898,3 +911,13 @@ data-quality warnings per PRD.md §17) remains optional. Phase 14 (production de
 one remaining major roadmap item, but requires real Vercel/production-Supabase credentials this
 environment doesn't have — would need to stop and hand off deployment steps rather than execute
 them directly.
+
+
+## Phase 2 revision — automatic catalog (owner decision)
+
+Admin authoring of exams was removed. Exams are now fetched from Google + official pages, extracted with Gemini, validated, and **auto-published only from official domains** (`gov.in`, `nic.in`, `ac.in`, `ibps.in`), enforced by DB constraint `exams_auto_verified_requires_official_host`. Admin Exams is a read-only monitor (sync status/errors, unpublish/restore/block, "Sync from Google now"). Migration `20261113100000_exam_catalog_auto_sync.sql`; pipeline `services/exams/*`; details and trust rules in `docs/GOOGLE_SEARCH_INTEGRATION.md`. Live Google/Gemini runs are untested (no credentials/billing).
+
+
+## Switchable LLM provider page
+
+`/admin/ai-providers` (super_admin only): save encrypted API keys for Gemini, OpenAI, Anthropic and Cloudflare Workers AI and choose the one "In use". Job import and exam sync now go through `lib/llm`. Migration `20261113110000_llm_credentials.sql`; see `docs/AI_PROVIDERS.md`. Needs `APP_ENCRYPTION_KEY` in the server env. Live provider calls untested.

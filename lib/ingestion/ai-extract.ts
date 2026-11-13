@@ -1,18 +1,11 @@
 import "server-only";
 
-import { GoogleGenAI } from "@google/genai";
-import { serverEnv } from "@/lib/env.server";
+import { requireActiveLlm } from "@/lib/llm/resolve";
 import { jobExtractionSchema, type JobExtraction } from "@/lib/validation/ingestion";
 
-// TECH_STACK.md's AI section: Google Gemini (switched from the originally
-// planned Anthropic during Phase 7 implementation — a working Anthropic
-// key wasn't available and the user explicitly chose to switch providers,
-// not a silent substitution). gemini-2.5-flash: fast/cost-efficient,
-// appropriate for a constrained single-purpose structured-extraction call
-// (SECURITY.md §12: "not wired into an agentic tool-execution loop").
-const MODEL = "gemini-2.5-flash";
-export const AI_PROVIDER = "google";
-export const AI_MODEL = MODEL;
+// The model is whichever LLM a super admin marked "In use" on /admin/ai-providers
+// (lib/llm/resolve.ts); SECURITY.md §12: a constrained single-purpose structured
+// extraction call, never an agentic tool loop.
 
 const SYSTEM_PROMPT = `You extract structured data from Indian government job recruitment notifications.
 
@@ -141,11 +134,10 @@ const GEMINI_RESPONSE_SCHEMA = {
  * function still throws on anything that doesn't actually parse, exactly
  * as the caller (services/admin/job-imports.ts) expects.
  */
-export async function extractJobFromText(documentText: string): Promise<JobExtraction> {
-  if (!serverEnv.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured.");
-  }
-  const client = new GoogleGenAI({ apiKey: serverEnv.GEMINI_API_KEY });
+export async function extractJobWithMeta(
+  documentText: string,
+): Promise<{ extraction: JobExtraction; provider: string; model: string }> {
+  const llm = await requireActiveLlm();
 
   // A very long document is truncated rather than sent in full — bounds
   // both cost and the prompt-injection surface area, and a truncated
@@ -153,29 +145,11 @@ export async function extractJobFromText(documentText: string): Promise<JobExtra
   // complete manually.
   const truncatedText = documentText.slice(0, 100_000);
 
-  const response = await client.models.generateContent({
-    model: MODEL,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: `Extract structured data from this government job notification document.\n\n<document>\n${truncatedText}\n</document>`,
-          },
-        ],
-      },
-    ],
-    config: {
-      systemInstruction: SYSTEM_PROMPT,
-      responseMimeType: "application/json",
-      responseSchema: GEMINI_RESPONSE_SCHEMA,
-    },
+  const rawText = await llm.client.generateJson({
+    system: SYSTEM_PROMPT,
+    user: `Extract structured data from this government job notification document.\n\n<document>\n${truncatedText}\n</document>`,
+    schema: GEMINI_RESPONSE_SCHEMA,
   });
-
-  const rawText = response.text;
-  if (!rawText) {
-    throw new Error("AI extraction returned no output.");
-  }
 
   let parsedJson: unknown;
   try {
@@ -188,5 +162,9 @@ export async function extractJobFromText(documentText: string): Promise<JobExtra
   if (!result.success) {
     throw new Error(`AI extraction output failed schema validation: ${result.error.message}`);
   }
-  return result.data;
+  return { extraction: result.data, provider: llm.provider, model: llm.model };
+}
+
+export async function extractJobFromText(documentText: string): Promise<JobExtraction> {
+  return (await extractJobWithMeta(documentText)).extraction;
 }
