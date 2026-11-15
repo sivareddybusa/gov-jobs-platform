@@ -6,6 +6,8 @@ import { extractExamFromText } from "@/lib/ingestion/exam-extract";
 import { isLlmConfigured } from "@/lib/llm/resolve";
 import { safeFetch } from "@/lib/ingestion/safe-fetch";
 import { extractText } from "@/lib/ingestion/extract-text";
+import { extractSyllabusFromText } from "@/lib/ingestion/syllabus-extract";
+import { runSyllabusSync, type SyllabusSummary } from "@/services/syllabus/sync";
 import { refreshStaleExams, runExamSync, type PageReader, type SyncSummary } from "./sync";
 
 const readPage: PageReader = async (url) => {
@@ -52,4 +54,27 @@ export async function runConfiguredExamSync(): Promise<RunResult> {
       failed: discovered.failed + refreshed.failed,
     },
   };
+}
+
+export type SyllabusRunResult =
+  { status: "ok"; summary: SyllabusSummary } | { status: "unavailable"; reason: string };
+
+/** Fetches syllabi for published exams that have none yet (or a stale one). */
+export async function runConfiguredSyllabusSync(): Promise<SyllabusRunResult> {
+  const search = getExamSearchProvider();
+  if (!search)
+    return { status: "unavailable", reason: "No search provider is configured (SERPER_API_KEY)." };
+  if (!(await isLlmConfigured())) {
+    return {
+      status: "unavailable",
+      reason: "No AI provider is in use. A super admin can add one under Admin → AI providers.",
+    };
+  }
+  const summary = await runSyllabusSync({
+    db: createAdminClient(),
+    search,
+    extract: extractSyllabusFromText,
+    readPage,
+  });
+  return { status: "ok", summary };
 }

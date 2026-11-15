@@ -138,6 +138,9 @@ export function cloudflareClient(apiKey: string, model: string, accountId: strin
             { role: "user", content: user },
           ],
           response_format: { type: "json_schema", json_schema: schema },
+          // Workers AI defaults to 256 output tokens, which truncates JSON mid-object.
+          max_tokens: 4096,
+          temperature: 0,
         },
       );
       return asText(pick(json, "result", "response"));

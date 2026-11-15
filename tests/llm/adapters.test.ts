@@ -51,6 +51,7 @@ describe("Cloudflare adapter", () => {
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe(`https://api.cloudflare.com/client/v4/accounts/${acct}/ai/run/@cf/meta/m`);
     expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer cf-secret");
+    expect(JSON.parse(init.body as string).max_tokens).toBeGreaterThanOrEqual(2048); // not the 256 default
   });
   it("refuses an invalid account id (no request made)", async () => {
     const f = mockFetch({});

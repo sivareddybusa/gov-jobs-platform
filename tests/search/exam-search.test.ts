@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ExamSearchUnavailableError,
   GoogleProgrammableSearchProvider,
@@ -28,6 +28,8 @@ describe("normalizeResults", () => {
 });
 
 describe("getExamSearchProvider", () => {
+  // .env.local may hold a real Serper key; these cases are about the Google fallback.
+  beforeEach(() => vi.stubEnv("SERPER_API_KEY", ""));
   it("is null when credentials are missing (fallback to the internal catalog)", () => {
     vi.stubEnv("GOOGLE_SEARCH_API_KEY", "");
     vi.stubEnv("GOOGLE_SEARCH_ENGINE_ID", "");

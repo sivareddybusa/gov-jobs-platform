@@ -220,6 +220,10 @@ export type Database = {
           slug: string;
           source_url: string | null;
           status: string;
+          syllabus_error: string | null;
+          syllabus_source_url: string | null;
+          syllabus_status: string | null;
+          syllabus_synced_at: string | null;
           sync_error: string | null;
           sync_status: string | null;
           translations: Json;
@@ -244,6 +248,10 @@ export type Database = {
           slug: string;
           source_url?: string | null;
           status?: string;
+          syllabus_error?: string | null;
+          syllabus_source_url?: string | null;
+          syllabus_status?: string | null;
+          syllabus_synced_at?: string | null;
           sync_error?: string | null;
           sync_status?: string | null;
           translations?: Json;
@@ -268,6 +276,10 @@ export type Database = {
           slug?: string;
           source_url?: string | null;
           status?: string;
+          syllabus_error?: string | null;
+          syllabus_source_url?: string | null;
+          syllabus_status?: string | null;
+          syllabus_synced_at?: string | null;
           sync_error?: string | null;
           sync_status?: string | null;
           translations?: Json;
@@ -1434,6 +1446,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      syllabus_nodes: {
+        Row: {
+          created_at: string;
+          depth: number;
+          exam_id: string;
+          id: string;
+          name: string;
+          parent_id: string | null;
+          position: number;
+          source_url: string;
+        };
+        Insert: {
+          created_at?: string;
+          depth: number;
+          exam_id: string;
+          id?: string;
+          name: string;
+          parent_id?: string | null;
+          position: number;
+          source_url: string;
+        };
+        Update: {
+          created_at?: string;
+          depth?: number;
+          exam_id?: string;
+          id?: string;
+          name?: string;
+          parent_id?: string | null;
+          position?: number;
+          source_url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "syllabus_nodes_exam_id_fkey";
+            columns: ["exam_id"];
+            isOneToOne: false;
+            referencedRelation: "exams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "syllabus_nodes_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "syllabus_nodes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_exam_targets: {
         Row: {
           created_at: string;
@@ -1576,6 +1636,10 @@ export type Database = {
         Returns: boolean;
       };
       is_official_exam_url: { Args: { url: string }; Returns: boolean };
+      replace_exam_syllabus: {
+        Args: { p_exam_id: string; p_source_url: string; p_tree: Json };
+        Returns: number;
+      };
       set_active_llm_credential: { Args: { p_id: string }; Returns: undefined };
       set_primary_exam_target: {
         Args: { target_id: string };

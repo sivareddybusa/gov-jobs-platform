@@ -1,5 +1,3 @@
-// @vitest-environment node
-//
 // Phase 7 (ingestion). Real call to the actual Gemini API — skipped if no
 // key is configured, same reachability-gated pattern as the real-DB tests,
 // since CLAUDE.md is explicit that a test must not be claimed as passing/
@@ -45,7 +43,7 @@ Online Application Closing Date: 04-02-2026
 The detailed notification is available at the Commission's official website.
 `;
 
-describe.skipIf(!hasKey)("extractJobFromText (real Gemini API call)", () => {
+describe.skipIf(!hasKey)("extractJobFromText (real call to the active LLM)", () => {
   it("extracts plausible structured fields from a realistic sample notice", async () => {
     const result = await extractJobFromText(SAMPLE_NOTICE);
 

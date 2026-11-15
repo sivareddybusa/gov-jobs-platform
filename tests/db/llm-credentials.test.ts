@@ -1,7 +1,7 @@
 // LLM credentials are unreachable from any user session; only the service role
 // (behind super_admin checks in app code) can touch them, and at most one key
 // can be active. Skips cleanly if the local stack is down.
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { addLlmKeyUseCase, llmKeyActionUseCase } from "@/services/admin/llm";
@@ -32,8 +32,16 @@ describe.skipIf(!up)("llm_credentials", () => {
   const label = `t-${stamp}`;
   process.env["APP_ENCRYPTION_KEY"] ??= Buffer.alloc(32, 7).toString("base64");
 
+  // Switching the active key is part of what is tested, so remember the real one and put it back.
+  let activeBefore: string | null = null;
+  beforeAll(async () => {
+    const { data } = await admin.from("llm_credentials").select("id").eq("is_active", true);
+    activeBefore = data?.[0]?.id ?? null;
+  });
+
   afterAll(async () => {
     await admin.from("llm_credentials").delete().like("label", `%${stamp}`);
+    if (activeBefore) await admin.rpc("set_active_llm_credential", { p_id: activeBefore });
     await admin.from("audit_logs").delete().like("metadata->>label", `%${stamp}`);
   });
 

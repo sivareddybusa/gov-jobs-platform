@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { getPublishedExamBySlug } from "@/db/exams";
 import { getTargetForExam } from "@/db/exam-targets";
+import { getSyllabus } from "@/db/syllabus";
+import { SyllabusTree } from "@/components/preparation/syllabus-tree";
 import { searchPublishedNotifications } from "@/db/jobs";
 import { summarizeNotificationEligibility } from "@/services/jobs/notification-eligibility";
 import { EXAM_CATEGORY_LABELS } from "@/domain/exams";
@@ -24,11 +26,12 @@ export default async function ExamDetailPage({ params }: { params: Promise<{ slu
   const exam = await getPublishedExamBySlug(supabase, slug);
   if (!exam) notFound();
 
-  const [target, notifications] = await Promise.all([
+  const [target, notifications, syllabus] = await Promise.all([
     getTargetForExam(supabase, user.id, exam.id),
     exam.organization_id
       ? searchPublishedNotifications(supabase, { organizationId: exam.organization_id, limit: 6 })
       : Promise.resolve([]),
+    getSyllabus(supabase, exam.id),
   ]);
   const statusById = await summarizeNotificationEligibility(supabase, user.id, notifications);
   const preparing = target?.status === "active";
@@ -104,9 +107,42 @@ export default async function ExamDetailPage({ params }: { params: Promise<{ slu
         )}
       </section>
 
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">Syllabus</h2>
+        {syllabus.total > 0 ? (
+          <Card className="flex flex-col gap-3">
+            <SyllabusTree tree={syllabus.tree} />
+            <p className="border-t border-gray-100 pt-3 text-xs text-gray-500">
+              Collected automatically from{" "}
+              {syllabus.sourceUrl ? (
+                <a
+                  href={syllabus.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-brand-600 hover:underline"
+                >
+                  the official page ↗
+                </a>
+              ) : (
+                "an official page"
+              )}
+              {syllabus.syncedAt
+                ? ` on ${new Date(syllabus.syncedAt).toLocaleDateString("en-IN")}`
+                : ""}
+              . Always confirm against the latest official notification.
+            </p>
+          </Card>
+        ) : (
+          <Card className="text-sm text-gray-500">
+            The syllabus for this exam hasn&apos;t been found on an official page yet. It appears
+            here automatically once it is.
+          </Card>
+        )}
+      </section>
+
       <Card className="text-sm text-gray-500">
-        Syllabus, study materials, practice questions and mock tests for this exam are added in
-        upcoming releases and will appear here once verified.
+        Study materials, practice questions and mock tests for this exam are added in upcoming
+        releases and will appear here once verified.
       </Card>
     </div>
   );

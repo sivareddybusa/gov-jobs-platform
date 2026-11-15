@@ -6,7 +6,7 @@ import { getSyncAvailability } from "@/services/exams/run";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RunSyncButton, StatusActions } from "./status-actions";
+import { RunSyllabusButton, RunSyncButton, StatusActions } from "./status-actions";
 
 export const metadata = { title: "Exams · Admin" };
 
@@ -27,7 +27,14 @@ export default async function AdminExamsPage() {
       <PageHeader
         title="Exams"
         description="The exam catalog is fetched automatically from Google and official websites. Admins monitor it and can take wrong content down; they do not enter exams."
-        actions={isAdmin ? <RunSyncButton disabled={!configured} /> : null}
+        actions={
+          isAdmin ? (
+            <div className="flex flex-wrap items-start justify-end gap-2">
+              <RunSyllabusButton disabled={!configured} />
+              <RunSyncButton disabled={!configured} />
+            </div>
+          ) : null
+        }
       />
       {!configured ? (
         <Card className="mb-4 border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-900">
@@ -81,6 +88,15 @@ export default async function AdminExamsPage() {
                       {exam.last_synced_at
                         ? `Last synced ${new Date(exam.last_synced_at).toLocaleString("en-IN")}`
                         : "Not synced yet"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {exam.syllabus_status === "ok"
+                        ? `Syllabus synced ${new Date(exam.syllabus_synced_at!).toLocaleDateString("en-IN")}`
+                        : exam.syllabus_status === "not_found"
+                          ? "Syllabus: not found on official pages"
+                          : exam.syllabus_status === "failed"
+                            ? `Syllabus error: ${exam.syllabus_error ?? "unknown"}`
+                            : "Syllabus: not fetched yet"}
                     </p>
                     {exam.sync_status === "failed" && exam.sync_error ? (
                       <p className="text-xs text-red-700">Sync error: {exam.sync_error}</p>

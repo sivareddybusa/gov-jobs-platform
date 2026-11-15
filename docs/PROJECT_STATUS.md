@@ -921,3 +921,8 @@ Admin authoring of exams was removed. Exams are now fetched from Google + offici
 ## Switchable LLM provider page
 
 `/admin/ai-providers` (super_admin only): save encrypted API keys for Gemini, OpenAI, Anthropic and Cloudflare Workers AI and choose the one "In use". Job import and exam sync now go through `lib/llm`. Migration `20261113110000_llm_credentials.sql`; see `docs/AI_PROVIDERS.md`. Needs `APP_ENCRYPTION_KEY` in the server env. Live provider calls untested.
+
+
+## Phase 3 — Syllabus (auto-fetched)
+
+Exam → subject → chapter → topic tree stored in `syllabus_nodes` (migration `20261114090000_phase3_syllabus.sql`), fetched from official pages by `services/syllabus/sync.ts` with a name-must-appear-on-page guard, replaced atomically by `replace_exam_syllabus()`, shown on the candidate exam page with its official source, and monitored on Admin → Exams ("Fetch syllabi now"). See `docs/SYLLABUS.md` for the pipeline, trust rules and honest limits (many official notices publish only the exam pattern).

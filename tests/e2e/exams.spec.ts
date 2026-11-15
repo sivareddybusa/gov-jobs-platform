@@ -97,6 +97,25 @@ test.describe("exam catalog and preparation targets (Phase 2)", () => {
 
   test("admin monitors synced exams but cannot author them", async ({ page }) => {
     await seedExam(nameA, "published");
+    // Syllabus arrives the way the sync stores it (service-role RPC), never via a form.
+    const exRes = await svc(
+      `/rest/v1/exams?select=id&slug=eq.${encodeURIComponent(nameA.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}`,
+    );
+    const examId = ((await exRes.json()) as Array<{ id: string }>)[0]!.id;
+    const rpc = await svc("/rest/v1/rpc/replace_exam_syllabus", {
+      method: "POST",
+      body: JSON.stringify({
+        p_exam_id: examId,
+        p_source_url: "https://www.ibps.in/syllabus-e2e",
+        p_tree: [
+          {
+            name: "E2E Reasoning",
+            children: [{ name: "E2E Puzzles", children: [{ name: "E2E Seating arrangement" }] }],
+          },
+        ],
+      }),
+    });
+    expect(rpc.ok).toBe(true);
     await seedExam(nameB, "draft"); // stays hidden from candidates
 
     await registerAndOnboard(page, adminEmail, password);
@@ -158,6 +177,17 @@ test.describe("exam catalog and preparation targets (Phase 2)", () => {
     await expect(page.getByRole("heading", { level: 1, name: nameA })).toBeVisible();
     await expect(page.getByRole("link", { name: /Official website/ })).toBeVisible();
     await expect(page.getByText("You are preparing for this exam.")).toBeVisible();
+
+    // Syllabus tree with its official source; the empty-state text is not shown.
+    await expect(page.getByRole("heading", { name: "Syllabus" })).toBeVisible();
+    await expect(page.getByText("E2E Reasoning")).toBeVisible();
+    await page.getByText("E2E Puzzles").click();
+    await expect(page.getByText("E2E Seating arrangement")).toBeVisible();
+    await expect(page.getByRole("link", { name: /the official page/ })).toHaveAttribute(
+      "href",
+      "https://www.ibps.in/syllabus-e2e",
+    );
+    await expect(page.getByText("hasn't been found on an official page yet")).toHaveCount(0);
 
     // Pause, resume, then remove keeps history and shows it under "Previously prepared".
     await page.goto("/preparation");
