@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  baseExamName,
   countNodes,
   nameAppearsInText,
   normalizeForMatch,
+  pageIsAboutExam,
   pickSyllabusWindow,
+  rankSyllabusHits,
+  syllabusSearchNames,
   pruneTreeToSource,
 } from "@/domain/syllabus";
 import { extractionToTree, syllabusExtractionSchema } from "@/lib/validation/syllabus";
@@ -106,5 +110,59 @@ describe("syllabusExtractionSchema", () => {
         subjects: [{ name: "", chapters: [] }],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("search helpers", () => {
+  it("strips years, edition numerals and notes from exam names", () => {
+    expect(baseExamName("Combined Graduate Level Examination, 2026")).toBe(
+      "Combined Graduate Level Examination",
+    );
+    expect(baseExamName("CRP PO/MT -XVI")).toBe("CRP PO/MT");
+    expect(baseExamName("CRP SPL-XIV")).toBe("CRP SPL");
+    expect(baseExamName("IBPS RRB (Regional Rural Banks) recruitment")).toBe(
+      "IBPS RRB recruitment",
+    );
+    expect(baseExamName("Civil Services (Preliminary) Examination 2025-26")).toBe(
+      "Civil Services Examination",
+    );
+  });
+  it("searches the full name and the base name once each", () => {
+    expect(syllabusSearchNames("SSC CGL")).toEqual(["SSC CGL"]);
+    expect(syllabusSearchNames("CRP SPL-XVI")).toEqual(["CRP SPL-XVI", "CRP SPL"]);
+  });
+  it("ranks syllabus-looking hits first and keeps order otherwise", () => {
+    const out = rankSyllabusHits([
+      { url: "https://a.gov.in/home" },
+      { url: "https://a.gov.in/notice.pdf", title: "Notice" },
+      { url: "https://a.gov.in/CGL-syllabus.pdf" },
+      { url: "https://a.gov.in/x", title: "Scheme of Examination" },
+    ]);
+    expect(out.map((h) => h.url)).toEqual([
+      "https://a.gov.in/CGL-syllabus.pdf",
+      "https://a.gov.in/x",
+      "https://a.gov.in/home",
+      "https://a.gov.in/notice.pdf",
+    ]);
+  });
+});
+
+describe("pageIsAboutExam", () => {
+  it("accepts a page titled with the exam's words, even for another edition or year", () => {
+    expect(
+      pageIsAboutExam(
+        "SSC Combined Graduate Level (CGL)",
+        "COMBINED GRADUATE LEVEL EXAMINATION, 2024 Scheme and Syllabus",
+      ),
+    ).toBe(true);
+    expect(
+      pageIsAboutExam("CRP SPL-XIV", "Detailed Notification CRP SPL-XVI Specialist Officers"),
+    ).toBe(true);
+  });
+  it("rejects another exam's page and empty names", () => {
+    expect(
+      pageIsAboutExam("CRP RRBs XV", "Detailed Advertisement CRP SPL-XV Specialist Officers posts"),
+    ).toBe(false);
+    expect(pageIsAboutExam("Examination", "Examination syllabus")).toBe(false);
   });
 });

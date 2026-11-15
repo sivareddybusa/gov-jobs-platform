@@ -4,8 +4,11 @@ import { isOfficialExamUrl } from "@/domain/exams";
 import {
   MIN_SYLLABUS_NODES,
   countNodes,
+  pageIsAboutExam,
   pickSyllabusWindow,
   pruneTreeToSource,
+  rankSyllabusHits,
+  syllabusSearchNames,
 } from "@/domain/syllabus";
 import { extractionToTree } from "@/lib/validation/syllabus";
 import type { ExamSearchProvider } from "@/lib/search/exam-search";
@@ -31,11 +34,15 @@ export type SyllabusDeps = {
 
 export type SyllabusSummary = { exams: number; stored: number; notFound: number; failed: number };
 
-const MAX_PAGES_PER_EXAM = 4;
+const MAX_PAGES_PER_EXAM = 6;
 const MAX_EXAMS_PER_RUN = 3;
 const OFFICIAL_ONLY = "(site:gov.in OR site:nic.in OR site:ibps.in OR site:nta.ac.in)";
 
-/** Candidate pages for one exam: its own source page first, then official search hits. */
+/**
+ * Candidate pages for one exam: its own source page first, then official search
+ * hits (full name and edition-free base name, plain and PDF), syllabus-looking
+ * ones ranked first.
+ */
 export async function findSyllabusCandidates(
   deps: Pick<SyllabusDeps, "search">,
   exam: Pick<ExamForSyllabus, "name" | "source_url">,
@@ -45,11 +52,21 @@ export async function findSyllabusCandidates(
     if (isOfficialExamUrl(u) && !urls.includes(u)) urls.push(u);
   };
   if (exam.source_url) add(exam.source_url);
-  try {
-    for (const r of await deps.search.search(`${exam.name} syllabus ${OFFICIAL_ONLY}`)) add(r.url);
-  } catch {
-    // Search failing still leaves the exam's own source page to try.
+
+  const hits: Array<{ url: string; title?: string }> = [];
+  for (const name of syllabusSearchNames(exam.name)) {
+    for (const q of [
+      `${name} syllabus ${OFFICIAL_ONLY}`,
+      `${name} syllabus filetype:pdf ${OFFICIAL_ONLY}`,
+    ]) {
+      try {
+        hits.push(...(await deps.search.search(q)));
+      } catch {
+        // A failing query still leaves the others (and the exam's own page) to try.
+      }
+    }
   }
+  for (const h of rankSyllabusHits(hits)) add(h.url);
   return urls.slice(0, MAX_PAGES_PER_EXAM);
 }
 
@@ -70,6 +87,9 @@ export async function syncSyllabusForExam(
       reachedAnyPage = true;
       // Trust only the page actually fetched, and only if still official after redirects.
       if (!isOfficialExamUrl(page.finalUrl)) continue;
+
+      // The page must actually be about this exam, not a neighbouring one.
+      if (!pageIsAboutExam(exam.name, page.text)) continue;
 
       const window = pickSyllabusWindow(page.text);
       const extraction = await deps.extract(window);

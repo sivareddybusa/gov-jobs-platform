@@ -24,7 +24,7 @@ const up = await reachable();
 const opts = { auth: { autoRefreshToken: false, persistSession: false } };
 
 const PAGE =
-  "Notice. Syllabus. General Awareness: History, Geography, Polity. Quantitative Aptitude: Percentages, Ratio, Algebra. English: Grammar, Vocabulary.";
+  "Combined Graduate Level Examination. Syllabus. General Awareness: History, Geography, Polity. Quantitative Aptitude: Percentages, Ratio, Algebra. English: Grammar, Vocabulary.";
 
 describe.skipIf(!up)("syllabus (real DB, fake providers)", () => {
   const db = createClient<Database>(API_URL, SERVICE_ROLE_KEY, opts);
@@ -96,7 +96,7 @@ describe.skipIf(!up)("syllabus (real DB, fake providers)", () => {
 
   const exam = (id: string) => ({
     id,
-    name: "Syl",
+    name: "Combined Graduate Level",
     source_url: `${host}/pub`,
     syllabus_synced_at: null,
   });
@@ -141,6 +141,17 @@ describe.skipIf(!up)("syllabus (real DB, fake providers)", () => {
     // ...and keeps the old syllabus rather than wiping it.
     const { data } = await db.from("syllabus_nodes").select("id").eq("exam_id", published);
     expect(data).toHaveLength(7);
+  });
+
+  it("refuses a page about a different exam (no cross-exam syllabus)", async () => {
+    await db.from("syllabus_nodes").delete().eq("exam_id", draft);
+    const out = await syncSyllabusForExam(deps(), {
+      ...exam(draft),
+      name: "Railway Group D Recruitment",
+    });
+    expect(out).toBe("not_found");
+    const { data } = await db.from("syllabus_nodes").select("id").eq("exam_id", draft);
+    expect(data).toEqual([]);
   });
 
   it("does not read non-official results and skips pages that redirect off-domain", async () => {

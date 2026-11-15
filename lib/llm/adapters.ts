@@ -4,7 +4,9 @@ import { GoogleGenAI } from "@google/genai";
 import type { LlmProviderCode } from "@/domain/llm";
 import { LlmError, type JsonRequest, type LlmClient } from "./types";
 
-const TIMEOUT_MS = 60_000;
+// Large structured outputs (a whole syllabus) can take a while on big models.
+const TIMEOUT_MS = 150_000;
+const MAX_ATTEMPTS = 2;
 
 /** Removes ```json fences some models add despite instructions. */
 export function stripJsonFences(text: string): string {
@@ -22,24 +24,33 @@ async function postJson(
   headers: Record<string, string>,
   body: unknown,
 ): Promise<unknown> {
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      cache: "no-store",
-    });
-  } catch {
-    throw new LlmError("The AI provider did not respond.");
+  let lastError: LlmError = new LlmError("The AI provider did not respond.");
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        cache: "no-store",
+      });
+    } catch {
+      lastError = new LlmError("The AI provider did not respond.");
+      continue; // transient: retry once
+    }
+    if (!res.ok) {
+      lastError = new LlmError(`The AI provider returned HTTP ${res.status}.`);
+      if (res.status === 429 || res.status >= 500) continue; // transient: retry once
+      throw lastError; // 4xx (bad key, bad request): retrying cannot help
+    }
+    try {
+      return await res.json();
+    } catch {
+      throw new LlmError("The AI provider returned an unreadable response.");
+    }
   }
-  if (!res.ok) throw new LlmError(`The AI provider returned HTTP ${res.status}.`);
-  try {
-    return await res.json();
-  } catch {
-    throw new LlmError("The AI provider returned an unreadable response.");
-  }
+  throw lastError;
 }
 
 function pick(obj: unknown, ...path: Array<string | number>): unknown {

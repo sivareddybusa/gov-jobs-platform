@@ -62,6 +62,28 @@ describe("Cloudflare adapter", () => {
   });
 });
 
+describe("retries", () => {
+  it("retries once on a transient failure, but never on a 4xx", async () => {
+    const ok = {
+      ok: true,
+      status: 200,
+      json: async () => ({ choices: [{ message: { content: "{}" } }] }),
+    };
+    const flaky = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) })
+      .mockResolvedValueOnce(ok);
+    vi.stubGlobal("fetch", flaky);
+    expect(await createClient("openai", "k", "m").generateJson(req)).toBe("{}");
+    expect(flaky).toHaveBeenCalledTimes(2);
+
+    const badKey = vi.fn(async () => ({ ok: false, status: 401, json: async () => ({}) }));
+    vi.stubGlobal("fetch", badKey);
+    await expect(createClient("openai", "k", "m").generateJson(req)).rejects.toThrow(/HTTP 401/);
+    expect(badKey).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("error handling", () => {
   it("reports only the status code, never the provider body or key", async () => {
     mockFetch({ error: "bad key sk-leaky-123" }, false, 401);
