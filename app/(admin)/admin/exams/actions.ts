@@ -5,7 +5,11 @@ import { requireAdminRole } from "@/lib/auth/require-admin";
 import type { ActionState } from "@/lib/auth/action-state";
 import { transitionExamUseCase } from "@/services/admin/exams";
 import { recordAuditEvent } from "@/lib/audit";
-import { runConfiguredExamSync, runConfiguredSyllabusSync } from "@/services/exams/run";
+import {
+  runConfiguredExamSync,
+  runConfiguredMaterialsSync,
+  runConfiguredSyllabusSync,
+} from "@/services/exams/run";
 
 export async function transitionExamAction(
   _prev: ActionState,
@@ -59,5 +63,25 @@ export async function runSyllabusSyncAction(): Promise<ActionState> {
   return {
     status: "success",
     message: `Checked ${s.exams} exams: ${s.stored} syllabi stored, ${s.notFound} not found on official pages, ${s.failed} failed.`,
+  };
+}
+
+export async function runMaterialsSyncAction(): Promise<ActionState> {
+  const { user } = await requireAdminRole("admin");
+  const result = await runConfiguredMaterialsSync();
+  if (result.status === "unavailable") return { status: "error", message: result.reason };
+  const s = result.summary;
+  await recordAuditEvent({
+    actorId: user.id,
+    eventType: "materials.sync_triggered",
+    entityTable: "exams",
+    entityId: user.id,
+    metadata: { ...s },
+  });
+  revalidatePath("/admin/exams");
+  revalidatePath("/preparation/exams");
+  return {
+    status: "success",
+    message: `Checked ${s.exams} exams: ${s.links} official links saved, ${s.failed} failed.`,
   };
 }

@@ -6,7 +6,12 @@ import { getSyncAvailability } from "@/services/exams/run";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RunSyllabusButton, RunSyncButton, StatusActions } from "./status-actions";
+import {
+  RunMaterialsButton,
+  RunSyllabusButton,
+  RunSyncButton,
+  StatusActions,
+} from "./status-actions";
 
 export const metadata = { title: "Exams · Admin" };
 
@@ -30,6 +35,7 @@ export default async function AdminExamsPage() {
         actions={
           isAdmin ? (
             <div className="flex flex-wrap items-start justify-end gap-2">
+              <RunMaterialsButton disabled={!availability.search} />
               <RunSyllabusButton disabled={!configured} />
               <RunSyncButton disabled={!configured} />
             </div>
@@ -97,6 +103,13 @@ export default async function AdminExamsPage() {
                           : exam.syllabus_status === "failed"
                             ? `Syllabus error: ${exam.syllabus_error ?? "unknown"}`
                             : "Syllabus: not fetched yet"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {exam.materials_error
+                        ? `Materials error: ${exam.materials_error}`
+                        : exam.materials_synced_at
+                          ? `Materials checked ${new Date(exam.materials_synced_at).toLocaleDateString("en-IN")}`
+                          : "Materials: not collected yet"}
                     </p>
                     {exam.sync_status === "failed" && exam.sync_error ? (
                       <p className="text-xs text-red-700">Sync error: {exam.sync_error}</p>

@@ -4,7 +4,12 @@ import { useActionState } from "react";
 import { initialActionState } from "@/lib/auth/action-state";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
-import { runSyllabusSyncAction, runSyncAction, transitionExamAction } from "./actions";
+import {
+  runMaterialsSyncAction,
+  runSyllabusSyncAction,
+  runSyncAction,
+  transitionExamAction,
+} from "./actions";
 
 type Action = "publish" | "unpublish" | "archive";
 const LABELS: Record<Action, string> = {
@@ -67,6 +72,26 @@ export function RunSyllabusButton({ disabled }: { disabled: boolean }) {
     <form action={formAction} className="flex flex-col items-end gap-2">
       <Button type="submit" variant="secondary" fullWidth={false} disabled={disabled || pending}>
         {pending ? "Fetching syllabi…" : "Fetch syllabi now"}
+      </Button>
+      {state.status === "error" ? (
+        <FormMessage status="error" message={state.message ?? "Failed."} />
+      ) : null}
+      {state.status === "success" ? (
+        <FormMessage status="success" message={state.message ?? "Done."} />
+      ) : null}
+    </form>
+  );
+}
+
+export function RunMaterialsButton({ disabled }: { disabled: boolean }) {
+  const [state, formAction, pending] = useActionState(
+    () => runMaterialsSyncAction(),
+    initialActionState,
+  );
+  return (
+    <form action={formAction} className="flex flex-col items-end gap-2">
+      <Button type="submit" variant="secondary" fullWidth={false} disabled={disabled || pending}>
+        {pending ? "Collecting links…" : "Collect materials now"}
       </Button>
       {state.status === "error" ? (
         <FormMessage status="error" message={state.message ?? "Failed."} />

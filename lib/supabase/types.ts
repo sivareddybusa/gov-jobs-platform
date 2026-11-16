@@ -203,6 +203,47 @@ export type Database = {
         };
         Relationships: [];
       };
+      exam_materials: {
+        Row: {
+          discovered_at: string;
+          exam_id: string;
+          host: string;
+          id: string;
+          kind: string;
+          last_seen_at: string;
+          title: string;
+          url: string;
+        };
+        Insert: {
+          discovered_at?: string;
+          exam_id: string;
+          host: string;
+          id?: string;
+          kind: string;
+          last_seen_at?: string;
+          title: string;
+          url: string;
+        };
+        Update: {
+          discovered_at?: string;
+          exam_id?: string;
+          host?: string;
+          id?: string;
+          kind?: string;
+          last_seen_at?: string;
+          title?: string;
+          url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "exam_materials_exam_id_fkey";
+            columns: ["exam_id"];
+            isOneToOne: false;
+            referencedRelation: "exams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       exams: {
         Row: {
           category: string;
@@ -212,6 +253,8 @@ export type Database = {
           discovered_via: string;
           id: string;
           last_synced_at: string | null;
+          materials_error: string | null;
+          materials_synced_at: string | null;
           name: string;
           official_website_url: string | null;
           organization_id: string | null;
@@ -240,6 +283,8 @@ export type Database = {
           discovered_via?: string;
           id?: string;
           last_synced_at?: string | null;
+          materials_error?: string | null;
+          materials_synced_at?: string | null;
           name: string;
           official_website_url?: string | null;
           organization_id?: string | null;
@@ -268,6 +313,8 @@ export type Database = {
           discovered_via?: string;
           id?: string;
           last_synced_at?: string | null;
+          materials_error?: string | null;
+          materials_synced_at?: string | null;
           name?: string;
           official_website_url?: string | null;
           organization_id?: string | null;

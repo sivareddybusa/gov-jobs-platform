@@ -116,6 +116,28 @@ test.describe("exam catalog and preparation targets (Phase 2)", () => {
       }),
     });
     expect(rpc.ok).toBe(true);
+    // Official document links arrive the way the sync stores them (service role).
+    const mat = await svc("/rest/v1/exam_materials", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([
+        {
+          exam_id: examId,
+          kind: "syllabus",
+          title: "E2E Official Syllabus",
+          url: "https://www.ibps.in/e2e-syllabus.pdf",
+          host: "www.ibps.in",
+        },
+        {
+          exam_id: examId,
+          kind: "notification",
+          title: "E2E Official Notice",
+          url: "https://www.ibps.in/e2e-notice.pdf",
+          host: "www.ibps.in",
+        },
+      ]),
+    });
+    expect(mat.ok).toBe(true);
     await seedExam(nameB, "draft"); // stays hidden from candidates
 
     await registerAndOnboard(page, adminEmail, password);
@@ -179,7 +201,7 @@ test.describe("exam catalog and preparation targets (Phase 2)", () => {
     await expect(page.getByText("You are preparing for this exam.")).toBeVisible();
 
     // Syllabus tree with its official source; the empty-state text is not shown.
-    await expect(page.getByRole("heading", { name: "Syllabus" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Syllabus", exact: true })).toBeVisible();
     await expect(page.getByText("E2E Reasoning")).toBeVisible();
     await page.getByText("E2E Puzzles").click();
     await expect(page.getByText("E2E Seating arrangement")).toBeVisible();
@@ -188,6 +210,19 @@ test.describe("exam catalog and preparation targets (Phase 2)", () => {
       "https://www.ibps.in/syllabus-e2e",
     );
     await expect(page.getByText("hasn't been found on an official page yet")).toHaveCount(0);
+
+    // Official documents: grouped, open the official site in a new tab.
+    await expect(page.getByRole("heading", { name: "Official documents" })).toBeVisible();
+    await expect(page.getByText("Syllabus & exam pattern")).toBeVisible();
+    const doc = page.getByRole("link", { name: /E2E Official Syllabus/ });
+    await expect(doc).toHaveAttribute("href", "https://www.ibps.in/e2e-syllabus.pdf");
+    await expect(doc).toHaveAttribute("target", "_blank");
+    await expect(doc).toHaveAttribute("rel", /noopener/);
+
+    // The Study Materials page shows the same documents for the exam being prepared.
+    await page.goto("/study-materials");
+    await expect(page.getByRole("link", { name: nameA })).toBeVisible();
+    await expect(page.getByRole("link", { name: /E2E Official Notice/ })).toBeVisible();
 
     // Pause, resume, then remove keeps history and shows it under "Previously prepared".
     await page.goto("/preparation");

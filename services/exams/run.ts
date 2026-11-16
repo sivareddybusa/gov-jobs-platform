@@ -7,6 +7,7 @@ import { isLlmConfigured } from "@/lib/llm/resolve";
 import { safeFetch } from "@/lib/ingestion/safe-fetch";
 import { extractText } from "@/lib/ingestion/extract-text";
 import { extractSyllabusFromText } from "@/lib/ingestion/syllabus-extract";
+import { runMaterialsSync, type MaterialsSummary } from "@/services/materials/sync";
 import { runSyllabusSync, type SyllabusSummary } from "@/services/syllabus/sync";
 import { refreshStaleExams, runExamSync, type PageReader, type SyncSummary } from "./sync";
 
@@ -77,4 +78,15 @@ export async function runConfiguredSyllabusSync(): Promise<SyllabusRunResult> {
     readPage,
   });
   return { status: "ok", summary };
+}
+
+export type MaterialsRunResult =
+  { status: "ok"; summary: MaterialsSummary } | { status: "unavailable"; reason: string };
+
+/** Collects official document links for published exams that have none yet (or stale ones). No AI needed. */
+export async function runConfiguredMaterialsSync(): Promise<MaterialsRunResult> {
+  const search = getExamSearchProvider();
+  if (!search)
+    return { status: "unavailable", reason: "No search provider is configured (SERPER_API_KEY)." };
+  return { status: "ok", summary: await runMaterialsSync({ db: createAdminClient(), search }) };
 }

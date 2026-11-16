@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getPublishedExamBySlug } from "@/db/exams";
 import { getTargetForExam } from "@/db/exam-targets";
 import { getSyllabus } from "@/db/syllabus";
+import { listMaterialsByKind } from "@/db/materials";
+import { MaterialList, hasMaterials } from "@/components/preparation/material-list";
 import { SyllabusTree } from "@/components/preparation/syllabus-tree";
 import { searchPublishedNotifications } from "@/db/jobs";
 import { summarizeNotificationEligibility } from "@/services/jobs/notification-eligibility";
@@ -26,12 +28,13 @@ export default async function ExamDetailPage({ params }: { params: Promise<{ slu
   const exam = await getPublishedExamBySlug(supabase, slug);
   if (!exam) notFound();
 
-  const [target, notifications, syllabus] = await Promise.all([
+  const [target, notifications, syllabus, materials] = await Promise.all([
     getTargetForExam(supabase, user.id, exam.id),
     exam.organization_id
       ? searchPublishedNotifications(supabase, { organizationId: exam.organization_id, limit: 6 })
       : Promise.resolve([]),
     getSyllabus(supabase, exam.id),
+    listMaterialsByKind(supabase, exam.id),
   ]);
   const statusById = await summarizeNotificationEligibility(supabase, user.id, notifications);
   const preparing = target?.status === "active";
@@ -140,9 +143,23 @@ export default async function ExamDetailPage({ params }: { params: Promise<{ slu
         )}
       </section>
 
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">Official documents</h2>
+        {hasMaterials(materials) ? (
+          <Card>
+            <MaterialList grouped={materials} />
+          </Card>
+        ) : (
+          <Card className="text-sm text-gray-500">
+            No official documents have been collected for this exam yet. They appear here
+            automatically once found.
+          </Card>
+        )}
+      </section>
+
       <Card className="text-sm text-gray-500">
-        Study materials, practice questions and mock tests for this exam are added in upcoming
-        releases and will appear here once verified.
+        Practice questions and mock tests for this exam are added in upcoming releases and will
+        appear here once verified.
       </Card>
     </div>
   );

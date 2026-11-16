@@ -1,6 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { runConfiguredExamSync, runConfiguredSyllabusSync } from "@/services/exams/run";
+import {
+  runConfiguredExamSync,
+  runConfiguredMaterialsSync,
+  runConfiguredSyllabusSync,
+} from "@/services/exams/run";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -23,5 +27,9 @@ export async function GET(request: Request) {
   }
   const exams = await runConfiguredExamSync();
   const syllabus = exams.status === "ok" ? await runConfiguredSyllabusSync() : null;
-  return NextResponse.json({ exams, syllabus }, { status: exams.status === "ok" ? 200 : 503 });
+  const materials = exams.status === "ok" ? await runConfiguredMaterialsSync() : null;
+  return NextResponse.json(
+    { exams, syllabus, materials },
+    { status: exams.status === "ok" ? 200 : 503 },
+  );
 }

@@ -926,3 +926,8 @@ Admin authoring of exams was removed. Exams are now fetched from Google + offici
 ## Phase 3 — Syllabus (auto-fetched)
 
 Exam → subject → chapter → topic tree stored in `syllabus_nodes` (migration `20261114090000_phase3_syllabus.sql`), fetched from official pages by `services/syllabus/sync.ts` with a name-must-appear-on-page guard, replaced atomically by `replace_exam_syllabus()`, shown on the candidate exam page with its official source, and monitored on Admin → Exams ("Fetch syllabi now"). See `docs/SYLLABUS.md` for the pipeline, trust rules and honest limits (many official notices publish only the exam pattern).
+
+
+## Phase 4 — Official study materials (links)
+
+`exam_materials` (migration `20261115090000_phase4_exam_materials.sql`): official document links per exam, collected without AI by `services/materials/sync.ts` (own-site + official host + edition match + rule-based classification), shown on the exam page and the Study Materials page, monitored on Admin → Exams ("Collect materials now"). No files are hosted; Storage is reserved for future user files. See `docs/MATERIALS.md`.
