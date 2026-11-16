@@ -120,3 +120,8 @@ Exam → subject → chapter → topic tree stored in `syllabus_nodes` (migratio
 ## Phase 4 — Official study materials (links)
 
 `exam_materials` (migration `20261115090000_phase4_exam_materials.sql`): official document links per exam, collected without AI by `services/materials/sync.ts` (own-site + official host + edition match + rule-based classification), shown on the exam page and the Study Materials page, monitored on Admin → Exams ("Collect materials now"). No files are hosted; Storage is reserved for future user files. See `docs/MATERIALS.md`.
+
+
+## Phase 5 — Practice question bank
+
+`questions` / `question_answers` / `practice_attempts` (migration `20261116090000_phase5_questions.sql`), `services/questions/sync.ts` (official-paper import + cross-checked AI generation), candidate Practice pages with instant feedback, Admin → Questions monitor. Answers are never sent before an attempt is recorded. See `docs/QUESTIONS.md`.

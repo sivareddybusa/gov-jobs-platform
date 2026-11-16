@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   runConfiguredExamSync,
   runConfiguredMaterialsSync,
+  runConfiguredQuestionSync,
   runConfiguredSyllabusSync,
 } from "@/services/exams/run";
 
@@ -28,8 +29,9 @@ export async function GET(request: Request) {
   const exams = await runConfiguredExamSync();
   const syllabus = exams.status === "ok" ? await runConfiguredSyllabusSync() : null;
   const materials = exams.status === "ok" ? await runConfiguredMaterialsSync() : null;
+  const questions = exams.status === "ok" ? await runConfiguredQuestionSync() : null;
   return NextResponse.json(
-    { exams, syllabus, materials },
+    { exams, syllabus, materials, questions },
     { status: exams.status === "ok" ? 200 : 503 },
   );
 }

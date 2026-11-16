@@ -7,7 +7,13 @@ import { isLlmConfigured } from "@/lib/llm/resolve";
 import { safeFetch } from "@/lib/ingestion/safe-fetch";
 import { extractText } from "@/lib/ingestion/extract-text";
 import { extractSyllabusFromText } from "@/lib/ingestion/syllabus-extract";
+import {
+  extractOfficialQuestions,
+  generateQuestions,
+  solveQuestions,
+} from "@/lib/ingestion/question-extract";
 import { runMaterialsSync, type MaterialsSummary } from "@/services/materials/sync";
+import { runQuestionSync, type QuestionSummary } from "@/services/questions/sync";
 import { runSyllabusSync, type SyllabusSummary } from "@/services/syllabus/sync";
 import { refreshStaleExams, runExamSync, type PageReader, type SyncSummary } from "./sync";
 
@@ -89,4 +95,25 @@ export async function runConfiguredMaterialsSync(): Promise<MaterialsRunResult> 
   if (!search)
     return { status: "unavailable", reason: "No search provider is configured (SERPER_API_KEY)." };
   return { status: "ok", summary: await runMaterialsSync({ db: createAdminClient(), search }) };
+}
+
+export type QuestionsRunResult =
+  { status: "ok"; summary: QuestionSummary } | { status: "unavailable"; reason: string };
+
+/** Reads official sample papers and generates cross-checked practice questions for thin syllabus topics. */
+export async function runConfiguredQuestionSync(): Promise<QuestionsRunResult> {
+  if (!(await isLlmConfigured())) {
+    return {
+      status: "unavailable",
+      reason: "No AI provider is in use. A super admin can add one under Admin → AI providers.",
+    };
+  }
+  const summary = await runQuestionSync({
+    db: createAdminClient(),
+    generate: generateQuestions,
+    solve: solveQuestions,
+    extractOfficial: extractOfficialQuestions,
+    readPage,
+  });
+  return { status: "ok", summary };
 }

@@ -211,6 +211,7 @@ export type Database = {
           id: string;
           kind: string;
           last_seen_at: string;
+          questions_extracted_at: string | null;
           title: string;
           url: string;
         };
@@ -221,6 +222,7 @@ export type Database = {
           id?: string;
           kind: string;
           last_seen_at?: string;
+          questions_extracted_at?: string | null;
           title: string;
           url: string;
         };
@@ -231,6 +233,7 @@ export type Database = {
           id?: string;
           kind?: string;
           last_seen_at?: string;
+          questions_extracted_at?: string | null;
           title?: string;
           url?: string;
         };
@@ -259,6 +262,8 @@ export type Database = {
           official_website_url: string | null;
           organization_id: string | null;
           published_at: string | null;
+          questions_error: string | null;
+          questions_synced_at: string | null;
           short_name: string | null;
           slug: string;
           source_url: string | null;
@@ -289,6 +294,8 @@ export type Database = {
           official_website_url?: string | null;
           organization_id?: string | null;
           published_at?: string | null;
+          questions_error?: string | null;
+          questions_synced_at?: string | null;
           short_name?: string | null;
           slug: string;
           source_url?: string | null;
@@ -319,6 +326,8 @@ export type Database = {
           official_website_url?: string | null;
           organization_id?: string | null;
           published_at?: string | null;
+          questions_error?: string | null;
+          questions_synced_at?: string | null;
           short_name?: string | null;
           slug?: string;
           source_url?: string | null;
@@ -1213,6 +1222,41 @@ export type Database = {
           },
         ];
       };
+      practice_attempts: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_correct: boolean;
+          question_id: string;
+          selected_index: number;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_correct: boolean;
+          question_id: string;
+          selected_index: number;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_correct?: boolean;
+          question_id?: string;
+          selected_index?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "practice_attempts_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profile_statuses: {
         Row: {
           created_at: string;
@@ -1354,6 +1398,88 @@ export type Database = {
             columns: ["education_level_id"];
             isOneToOne: false;
             referencedRelation: "education_levels";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      question_answers: {
+        Row: {
+          correct_index: number;
+          explanation: string | null;
+          question_id: string;
+        };
+        Insert: {
+          correct_index: number;
+          explanation?: string | null;
+          question_id: string;
+        };
+        Update: {
+          correct_index?: number;
+          explanation?: string | null;
+          question_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "question_answers_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: true;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      questions: {
+        Row: {
+          content_hash: string;
+          created_at: string;
+          difficulty: string | null;
+          exam_id: string;
+          id: string;
+          options: Json;
+          origin: string;
+          prompt: string;
+          source_url: string | null;
+          status: string;
+          subject: string | null;
+          topic: string | null;
+          verification: string | null;
+        };
+        Insert: {
+          content_hash: string;
+          created_at?: string;
+          difficulty?: string | null;
+          exam_id: string;
+          id?: string;
+          options: Json;
+          origin: string;
+          prompt: string;
+          source_url?: string | null;
+          status?: string;
+          subject?: string | null;
+          topic?: string | null;
+          verification?: string | null;
+        };
+        Update: {
+          content_hash?: string;
+          created_at?: string;
+          difficulty?: string | null;
+          exam_id?: string;
+          id?: string;
+          options?: Json;
+          origin?: string;
+          prompt?: string;
+          source_url?: string | null;
+          status?: string;
+          subject?: string | null;
+          topic?: string | null;
+          verification?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "questions_exam_id_fkey";
+            columns: ["exam_id"];
+            isOneToOne: false;
+            referencedRelation: "exams";
             referencedColumns: ["id"];
           },
         ];
@@ -1678,6 +1804,31 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      add_question: {
+        Args: {
+          p_content_hash: string;
+          p_correct: number;
+          p_difficulty?: string;
+          p_exam_id: string;
+          p_explanation?: string;
+          p_options: Json;
+          p_origin: string;
+          p_prompt: string;
+          p_source_url?: string;
+          p_subject?: string;
+          p_topic?: string;
+          p_verification: string;
+        };
+        Returns: string;
+      };
+      answer_practice_question: {
+        Args: { p_question_id: string; p_selected: number };
+        Returns: {
+          correct_index: number;
+          explanation: string;
+          is_correct: boolean;
+        }[];
+      };
       is_admin: {
         Args: { check_user_id: string; min_role: string };
         Returns: boolean;

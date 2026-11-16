@@ -49,6 +49,7 @@ const ADMIN_ITEMS: Array<NavItem & { minTier: AdminTier }> = [
   { label: "Sources", href: "/admin/sources", minTier: "reviewer" },
   { label: "Jobs", href: "/admin/jobs", minTier: "reviewer" },
   { label: "Exams", href: "/admin/exams", minTier: "reviewer" },
+  { label: "Questions", href: "/admin/questions", minTier: "reviewer" },
   { label: "AI imports", href: "/admin/imports", minTier: "reviewer" },
   { label: "AI providers", href: "/admin/ai-providers", minTier: "super_admin" },
   { label: "Roles", href: "/admin/roles", minTier: "super_admin" },
