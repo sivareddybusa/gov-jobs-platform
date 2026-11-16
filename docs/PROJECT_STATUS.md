@@ -936,3 +936,8 @@ Exam → subject → chapter → topic tree stored in `syllabus_nodes` (migratio
 ## Phase 5 — Practice question bank
 
 Questions come from two automatic sources: official sample papers (verbatim + stated answer key only) and AI-generated practice questions for syllabus topics (structural checks + two independent solves must agree). Answers live in a table candidates cannot read and are revealed only by `answer_practice_question()` when an attempt is recorded. Candidate `/practice` + `/practice/[slug]`, Admin → Questions (monitor, hide/restore, "Generate questions now"), cron route extended. Migration `20261116090000_phase5_questions.sql`; see `docs/QUESTIONS.md` for trust rules and honest limits (model quality, no live official paper yet).
+
+
+## Phase 6 — Mock tests
+
+Timed tests (1 minute per question, 5–20 questions) from the exam's published question bank, scored on the server: deadline set in the database, answers hidden while running, late answers refused, score computed by `finalize_mock_attempt`, results with per-subject breakdown and review. Practice marking +1 / −0.25 is a labelled product default, not an official scheme. Migration `20261117090000_phase6_mock_tests.sql`; see `docs/MOCK_TESTS.md`.

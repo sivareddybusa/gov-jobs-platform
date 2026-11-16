@@ -1178,6 +1178,107 @@ export type Database = {
         };
         Relationships: [];
       };
+      mock_attempt_questions: {
+        Row: {
+          answered_at: string | null;
+          attempt_id: string;
+          position: number;
+          question_id: string;
+          selected_index: number | null;
+        };
+        Insert: {
+          answered_at?: string | null;
+          attempt_id: string;
+          position: number;
+          question_id: string;
+          selected_index?: number | null;
+        };
+        Update: {
+          answered_at?: string | null;
+          attempt_id?: string;
+          position?: number;
+          question_id?: string;
+          selected_index?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mock_attempt_questions_attempt_id_fkey";
+            columns: ["attempt_id"];
+            isOneToOne: false;
+            referencedRelation: "mock_attempts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "mock_attempt_questions_question_id_fkey";
+            columns: ["question_id"];
+            isOneToOne: false;
+            referencedRelation: "questions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      mock_attempts: {
+        Row: {
+          correct_count: number | null;
+          duration_seconds: number;
+          exam_id: string;
+          expires_at: string;
+          id: string;
+          marks_correct: number;
+          marks_wrong: number;
+          question_count: number;
+          score: number | null;
+          started_at: string;
+          status: string;
+          submitted_at: string | null;
+          unanswered_count: number | null;
+          user_id: string;
+          wrong_count: number | null;
+        };
+        Insert: {
+          correct_count?: number | null;
+          duration_seconds: number;
+          exam_id: string;
+          expires_at: string;
+          id?: string;
+          marks_correct?: number;
+          marks_wrong?: number;
+          question_count: number;
+          score?: number | null;
+          started_at?: string;
+          status?: string;
+          submitted_at?: string | null;
+          unanswered_count?: number | null;
+          user_id: string;
+          wrong_count?: number | null;
+        };
+        Update: {
+          correct_count?: number | null;
+          duration_seconds?: number;
+          exam_id?: string;
+          expires_at?: string;
+          id?: string;
+          marks_correct?: number;
+          marks_wrong?: number;
+          question_count?: number;
+          score?: number | null;
+          started_at?: string;
+          status?: string;
+          submitted_at?: string | null;
+          unanswered_count?: number | null;
+          user_id?: string;
+          wrong_count?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mock_attempts_exam_id_fkey";
+            columns: ["exam_id"];
+            isOneToOne: false;
+            referencedRelation: "exams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           created_at: string;
@@ -1829,6 +1930,24 @@ export type Database = {
           is_correct: boolean;
         }[];
       };
+      finalize_mock_attempt: {
+        Args: { p_attempt_id: string };
+        Returns: undefined;
+      };
+      get_mock_questions: {
+        Args: { p_attempt_id: string };
+        Returns: {
+          correct_index: number;
+          explanation: string;
+          options: Json;
+          prompt: string;
+          question_id: string;
+          question_position: number;
+          selected_index: number;
+          subject: string;
+          topic: string;
+        }[];
+      };
       is_admin: {
         Args: { check_user_id: string; min_role: string };
         Returns: boolean;
@@ -1838,11 +1957,24 @@ export type Database = {
         Args: { p_exam_id: string; p_source_url: string; p_tree: Json };
         Returns: number;
       };
+      save_mock_answer: {
+        Args: {
+          p_attempt_id: string;
+          p_question_id: string;
+          p_selected: number;
+        };
+        Returns: string;
+      };
       set_active_llm_credential: { Args: { p_id: string }; Returns: undefined };
       set_primary_exam_target: {
         Args: { target_id: string };
         Returns: undefined;
       };
+      start_mock_attempt: {
+        Args: { p_count?: number; p_exam_id: string };
+        Returns: string;
+      };
+      submit_mock_attempt: { Args: { p_attempt_id: string }; Returns: string };
     };
     Enums: {
       [_ in never]: never;

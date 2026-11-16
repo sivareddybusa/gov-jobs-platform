@@ -125,3 +125,8 @@ Exam → subject → chapter → topic tree stored in `syllabus_nodes` (migratio
 ## Phase 5 — Practice question bank
 
 `questions` / `question_answers` / `practice_attempts` (migration `20261116090000_phase5_questions.sql`), `services/questions/sync.ts` (official-paper import + cross-checked AI generation), candidate Practice pages with instant feedback, Admin → Questions monitor. Answers are never sent before an attempt is recorded. See `docs/QUESTIONS.md`.
+
+
+## Phase 6 — Mock tests
+
+`mock_attempts` / `mock_attempt_questions` plus `start_mock_attempt`, `save_mock_answer`, `submit_mock_attempt`, `get_mock_questions` (migration `20261117090000_phase6_mock_tests.sql`); candidate `/mock-tests` hub, test runner with server-clock countdown and auto-submit, results and review pages. See `docs/MOCK_TESTS.md`.
