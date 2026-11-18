@@ -941,3 +941,8 @@ Questions come from two automatic sources: official sample papers (verbatim + st
 ## Phase 6 — Mock tests
 
 Timed tests (1 minute per question, 5–20 questions) from the exam's published question bank, scored on the server: deadline set in the database, answers hidden while running, late answers refused, score computed by `finalize_mock_attempt`, results with per-subject breakdown and review. Practice marking +1 / −0.25 is a labelled product default, not an official scheme. Migration `20261117090000_phase6_mock_tests.sql`; see `docs/MOCK_TESTS.md`.
+
+
+## Phase 7 — Previous-year papers
+
+Official question-paper and answer-key **links** per exam, grouped by year on `/previous-papers`. Reuses the Phase 4 pipeline (own-site + official host, rule-based classification, no AI); the year is shown only when the link itself states one. Nothing is hosted. Migration `20261118090000_phase7_previous_papers.sql`; see `docs/PREVIOUS_PAPERS.md` for limits (live check: SSC yes, IBPS none found).

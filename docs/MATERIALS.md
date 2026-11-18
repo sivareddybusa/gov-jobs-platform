@@ -4,7 +4,7 @@ Candidates see **official document links** per exam (on the exam page and on **S
 
 ## Decisions (owner)
 - Materials = official documents as links (no cached copies, no AI-written notes). Supabase Storage is therefore **not used** in this phase; it is reserved for future user-owned files (e.g. profile documents).
-- Kinds collected: notification, syllabus, sample paper, guidance. Previous-year question papers are deliberately **not** matched; they belong to the previous-papers phase.
+- Kinds collected: notification, syllabus, sample paper, guidance, plus (Phase 7) previous-year question papers and answer keys, which appear on **Previous Papers** instead of Study Materials. See `docs/PREVIOUS_PAPERS.md`.
 
 ## Pipeline (`services/materials/sync.ts`) — no AI
 1. For published, verified exams with no materials or a check older than 7 days (3 per run), run 4 official-only searches (notification, syllabus, sample paper, instructions) using the edition-free exam name.

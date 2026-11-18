@@ -64,7 +64,27 @@ const HITS: Hit[] = [
     title: "Combined Graduate Level previous year question papers",
     url: "https://ssc.gov.in/previous-year-question-papers.pdf",
     snippet: "",
-  }, // later phase
+  }, // a paper collection: no single year
+  {
+    title: "Combined Graduate Level Question Paper 2023 | Staff Selection Commission",
+    url: "https://ssc.gov.in/cgl-2023-question-paper.pdf",
+    snippet: "",
+  },
+  {
+    title: "Combined Graduate Level final answer key 2023",
+    url: "https://ssc.gov.in/cgl-final-answer-key-2023.pdf",
+    snippet: "",
+  },
+  {
+    title: "Combined Graduate Level question paper 2022 download",
+    url: "https://blog.example.com/cgl-2022-question-paper.pdf",
+    snippet: "",
+  }, // not official
+  {
+    title: "Railway Group D question paper 2022",
+    url: "https://ssc.gov.in/rrb-group-d-2022-question-paper.pdf",
+    snippet: "",
+  }, // other exam
   {
     title: "Combined Graduate Level practice paper",
     url: "https://www.ndl.gov.in/ssc-practice-paper.pdf",
@@ -92,8 +112,13 @@ describe("findMaterialsForExam (pure, fake search)", () => {
       ["syllabus", "https://ssc.gov.in/for-candidates/cgl-syllabus"],
       ["sample_paper", "https://ssc.gov.in/cgl-sample-paper.pdf"],
       ["guidance", "https://ssc.gov.in/guidelines.pdf"],
+      ["previous_paper", "https://ssc.gov.in/previous-year-question-papers.pdf"],
+      ["previous_paper", "https://ssc.gov.in/cgl-2023-question-paper.pdf"],
+      ["answer_key", "https://ssc.gov.in/cgl-final-answer-key-2023.pdf"],
     ]);
     expect(found[1]!.title).toBe("Syllabus");
+    // The year comes only from the link's own text; study materials carry none.
+    expect(found.map((f) => f.paper_year)).toEqual([null, null, null, null, null, 2023, 2023]);
   });
   it("survives failing queries", async () => {
     const failing: ExamSearchProvider = {
@@ -152,10 +177,14 @@ describe.skipIf(!up)("materials sync (real DB)", () => {
   });
 
   it("stores links, is idempotent, and records the check time", async () => {
-    expect(await syncMaterialsForExam({ db, search: fake(HITS) }, exam(published))).toBe(4);
-    expect(await syncMaterialsForExam({ db, search: fake(HITS) }, exam(published))).toBe(4);
-    const { data } = await db.from("exam_materials").select("kind, host").eq("exam_id", published);
-    expect(data).toHaveLength(4); // upsert, not duplicates
+    expect(await syncMaterialsForExam({ db, search: fake(HITS) }, exam(published))).toBe(7);
+    expect(await syncMaterialsForExam({ db, search: fake(HITS) }, exam(published))).toBe(7);
+    const { data } = await db
+      .from("exam_materials")
+      .select("kind, host, paper_year")
+      .eq("exam_id", published);
+    expect(data).toHaveLength(7); // upsert, not duplicates
+    expect(data!.filter((d) => d.paper_year === 2023)).toHaveLength(2);
     expect(new Set(data!.map((d) => d.host))).toEqual(new Set(["ssc.gov.in"]));
     const ex = await db
       .from("exams")
@@ -188,7 +217,7 @@ describe.skipIf(!up)("materials sync (real DB)", () => {
 
   it("is visible to anonymous visitors only for published exams", async () => {
     const pub = await anon.from("exam_materials").select("id").eq("exam_id", published);
-    expect(pub.data!.length).toBe(4);
+    expect(pub.data!.length).toBe(7);
     await db.from("exam_materials").insert({
       exam_id: draft,
       kind: "syllabus",
@@ -225,6 +254,34 @@ describe.skipIf(!up)("materials sync (real DB)", () => {
       host: "ssc.gov.in",
     });
     expect(http.error).not.toBeNull();
+    // A year only makes sense on papers and answer keys, and must be a plausible year.
+    const yearOnSyllabus = await db.from("exam_materials").insert({
+      exam_id: published,
+      kind: "syllabus",
+      title: "x",
+      url: "https://ssc.gov.in/z1",
+      host: "ssc.gov.in",
+      paper_year: 2023,
+    });
+    expect(yearOnSyllabus.error).not.toBeNull();
+    const absurdYear = await db.from("exam_materials").insert({
+      exam_id: published,
+      kind: "previous_paper",
+      title: "x",
+      url: "https://ssc.gov.in/z2",
+      host: "ssc.gov.in",
+      paper_year: 1850,
+    });
+    expect(absurdYear.error).not.toBeNull();
+    const okPaper = await db.from("exam_materials").insert({
+      exam_id: published,
+      kind: "previous_paper",
+      title: "x",
+      url: "https://ssc.gov.in/z3",
+      host: "ssc.gov.in",
+      paper_year: 2021,
+    });
+    expect(okPaper.error).toBeNull();
     const badKind = await db.from("exam_materials").insert({
       exam_id: published,
       kind: "ebook",

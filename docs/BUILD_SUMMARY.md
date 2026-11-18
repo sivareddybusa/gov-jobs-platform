@@ -130,3 +130,8 @@ Exam → subject → chapter → topic tree stored in `syllabus_nodes` (migratio
 ## Phase 6 — Mock tests
 
 `mock_attempts` / `mock_attempt_questions` plus `start_mock_attempt`, `save_mock_answer`, `submit_mock_attempt`, `get_mock_questions` (migration `20261117090000_phase6_mock_tests.sql`); candidate `/mock-tests` hub, test runner with server-clock countdown and auto-submit, results and review pages. See `docs/MOCK_TESTS.md`.
+
+
+## Phase 7 — Previous-year papers
+
+`exam_materials` gains kinds `previous_paper` / `answer_key` and a nullable `paper_year` (migration `20261118090000_phase7_previous_papers.sql`); `extractPaperYear` + classifier in `domain/materials`, two extra searches in `services/materials/sync.ts`, real `/previous-papers` page with `PaperList`. See `docs/PREVIOUS_PAPERS.md`.

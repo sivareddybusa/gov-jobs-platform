@@ -1,9 +1,4 @@
-import {
-  NO_SUBJECT_LABEL,
-  PRACTICE_MARKS,
-  formatClock,
-  subjectBreakdown,
-} from "@/domain/mock-tests";
+import { NO_SUBJECT_LABEL, formatClock, subjectBreakdown } from "@/domain/mock-tests";
 import type { MockAttemptWithExam, MockQuestion } from "@/db/mock-tests";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

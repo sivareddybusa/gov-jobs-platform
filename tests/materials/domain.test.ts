@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   classifyMaterial,
+  extractPaperYear,
   cleanMaterialTitle,
   isOnExamSite,
   notificationMatchesEdition,
@@ -26,10 +27,38 @@ describe("classifyMaterial", () => {
   it("prefers the more specific kind", () => {
     expect(c("https://x.gov.in/sample-paper-syllabus.pdf")).toBe("sample_paper");
   });
-  it("skips previous-year question papers (a later phase) and unknown documents", () => {
-    expect(c("https://x.gov.in/previous-year-question-papers.pdf")).toBeNull();
-    expect(c("https://x.gov.in/previous-year-papers/2023.pdf", "Question Paper 2023")).toBeNull();
+  it("classifies previous-year question papers and answer keys", () => {
+    expect(c("https://x.gov.in/previous-year-question-papers.pdf")).toBe("previous_paper");
+    expect(c("https://x.gov.in/papers/2023.pdf", "Question Paper 2023 Tier 1")).toBe(
+      "previous_paper",
+    );
+    expect(c("https://x.gov.in/pyq-2022.pdf")).toBe("previous_paper");
+    expect(c("https://x.gov.in/final-answer-key-2023.pdf")).toBe("answer_key");
+    expect(c("https://x.gov.in/x", "Provisional Answer Key")).toBe("answer_key");
+  });
+  it("keeps sample/model papers separate from real previous papers", () => {
+    expect(c("https://x.gov.in/sample-question-paper.pdf")).toBe("sample_paper");
+    expect(c("https://x.gov.in/model-paper-2023.pdf", "Question paper")).toBe("sample_paper");
+    expect(c("https://x.gov.in/sample-paper-with-answer-key.pdf")).toBe("sample_paper");
+  });
+  it("skips unknown documents", () => {
     expect(c("https://x.gov.in/results-2024.pdf", "Result")).toBeNull();
+    expect(c("https://x.gov.in/cutoff.pdf", "Cut off marks")).toBeNull();
+  });
+});
+
+describe("extractPaperYear", () => {
+  const y = (url: string, title = "") => extractPaperYear({ url, title }, 2026);
+  it("returns the one year the title or URL states", () => {
+    expect(y("https://x.gov.in/cgl-2023.pdf")).toBe(2023);
+    expect(y("https://x.gov.in/q.pdf", "Question Paper 2021 (Tier 1)")).toBe(2021);
+    expect(y("https://x.gov.in/2019/q-2019.pdf")).toBe(2019);
+  });
+  it("never guesses: none, several years, out-of-range or longer digit runs give null", () => {
+    expect(y("https://x.gov.in/question-paper.pdf")).toBeNull();
+    expect(y("https://x.gov.in/papers-2019-2023.pdf")).toBeNull();
+    expect(y("https://x.gov.in/q-2031.pdf")).toBeNull();
+    expect(y("https://x.gov.in/upload/120231.pdf")).toBeNull();
   });
 });
 

@@ -1,6 +1,17 @@
 export const MATERIAL_KINDS = ["notification", "syllabus", "sample_paper", "guidance"] as const;
 export type MaterialKind = (typeof MATERIAL_KINDS)[number];
 
+/** Previous-year question papers and answer keys (shown on Previous Papers, not Study Materials). */
+export const PAPER_KINDS = ["previous_paper", "answer_key"] as const;
+export type PaperKind = (typeof PAPER_KINDS)[number];
+
+export type AnyMaterialKind = MaterialKind | PaperKind;
+
+export const PAPER_KIND_LABELS: Record<PaperKind, string> = {
+  previous_paper: "Question papers",
+  answer_key: "Answer keys",
+};
+
 export const MATERIAL_KIND_LABELS: Record<MaterialKind, string> = {
   notification: "Notifications & advertisements",
   syllabus: "Syllabus & exam pattern",
@@ -8,11 +19,16 @@ export const MATERIAL_KIND_LABELS: Record<MaterialKind, string> = {
   guidance: "Instructions & guidance",
 };
 
-const CLASSIFIERS: Array<[MaterialKind, RegExp]> = [
+const CLASSIFIERS: Array<[AnyMaterialKind, RegExp]> = [
   // Order matters: more specific kinds first.
   [
     "sample_paper",
     /sample[-_ ]?(question[-_ ]?)?paper|model[-_ ]?(question[-_ ]?)?paper|mock[-_ ]?(test|paper)|practice[-_ ]?(set|paper)/i,
+  ],
+  ["answer_key", /answer[-_ ]?keys?|final[-_ ]?keys?|provisional[-_ ]?keys?|answer[-_ ]?sheet/i],
+  [
+    "previous_paper",
+    /previous[-_ ]?(year|years)|past[-_ ]?(year[-_ ]?)?(question[-_ ]?)?papers?|question[-_ ]?papers?\b|old[-_ ]?(question[-_ ]?)?papers?|\bpyqs?\b/i,
   ],
   ["syllabus", /syllab|scheme[-_ ]of[-_ ](the[-_ ])?exam|exam(ination)?[-_ ]pattern/i],
   [
@@ -27,19 +43,28 @@ const CLASSIFIERS: Array<[MaterialKind, RegExp]> = [
 
 /**
  * Classifies a document from its URL and title with fixed rules (no AI, so no
- * invention). Previous-year *question papers* are deliberately not matched here:
- * they belong to the later previous-papers phase. Returns null when unsure.
+ * invention). Returns null when unsure.
  */
-export function classifyMaterial(input: { url: string; title: string }): MaterialKind | null {
+export function classifyMaterial(input: { url: string; title: string }): AnyMaterialKind | null {
   const text = `${input.url} ${input.title}`;
-  if (
-    /previous[-_ ]?(year|years)|question[-_ ]?papers?\b(?!.*sample)/i.test(text) &&
-    !/sample|model/i.test(text)
-  ) {
-    return null;
-  }
   for (const [kind, re] of CLASSIFIERS) if (re.test(text)) return kind;
   return null;
+}
+
+/**
+ * The exam year a paper or answer key names in its own title/URL. Null when none is stated
+ * or when several different years appear (a collection, e.g. "2019-2023"): never guessed.
+ */
+export function extractPaperYear(
+  input: { url: string; title: string },
+  latestYear = new Date().getFullYear(),
+): number | null {
+  const years = new Set(
+    [...`${input.title} ${input.url}`.matchAll(/(?<!\d)(20\d{2})(?!\d)/g)]
+      .map((m) => Number(m[1]))
+      .filter((y) => y >= 2000 && y <= latestYear),
+  );
+  return years.size === 1 ? [...years][0]! : null;
 }
 
 /** Tidies a search-result title for display: collapses whitespace, strips site suffixes, caps length. */

@@ -211,6 +211,7 @@ export type Database = {
           id: string;
           kind: string;
           last_seen_at: string;
+          paper_year: number | null;
           questions_extracted_at: string | null;
           title: string;
           url: string;
@@ -222,6 +223,7 @@ export type Database = {
           id?: string;
           kind: string;
           last_seen_at?: string;
+          paper_year?: number | null;
           questions_extracted_at?: string | null;
           title: string;
           url: string;
@@ -233,6 +235,7 @@ export type Database = {
           id?: string;
           kind?: string;
           last_seen_at?: string;
+          paper_year?: number | null;
           questions_extracted_at?: string | null;
           title?: string;
           url?: string;

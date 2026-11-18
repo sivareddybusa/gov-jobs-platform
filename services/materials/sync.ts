@@ -5,9 +5,11 @@ import { pageIsAboutExam, baseExamName } from "@/domain/syllabus";
 import {
   classifyMaterial,
   cleanMaterialTitle,
+  extractPaperYear,
   isOnExamSite,
   notificationMatchesEdition,
-  type MaterialKind,
+  PAPER_KINDS,
+  type AnyMaterialKind,
 } from "@/domain/materials";
 import type { ExamSearchProvider } from "@/lib/search/exam-search";
 import {
@@ -30,6 +32,7 @@ export type MaterialsSummary = { exams: number; links: number; failed: number };
 
 const OFFICIAL_ONLY = "(site:gov.in OR site:nic.in OR site:ibps.in OR site:nta.ac.in)";
 const MAX_PER_KIND = 4;
+const MAX_PER_PAPER_KIND = 12; // one paper per year/shift adds up
 const MAX_EXAMS_PER_RUN = 3;
 
 const KIND_QUERIES = (name: string) => [
@@ -37,9 +40,18 @@ const KIND_QUERIES = (name: string) => [
   `${name} syllabus scheme of examination ${OFFICIAL_ONLY}`,
   `${name} sample model paper ${OFFICIAL_ONLY}`,
   `${name} instructions guidelines candidates ${OFFICIAL_ONLY}`,
+  `${name} previous year question papers ${OFFICIAL_ONLY}`,
+  `${name} answer key ${OFFICIAL_ONLY}`,
 ];
 
-export type FoundMaterial = { kind: MaterialKind; title: string; url: string; host: string };
+export type FoundMaterial = {
+  kind: AnyMaterialKind;
+  title: string;
+  url: string;
+  host: string;
+  /** Only for question papers / answer keys, and only when the link itself states one year. */
+  paper_year: number | null;
+};
 
 /**
  * Official, classified, exam-relevant links for one exam. Relevance uses the
@@ -53,7 +65,7 @@ export async function findMaterialsForExam(
 ): Promise<FoundMaterial[]> {
   const searchName = baseExamName(exam.name) || exam.name;
   const seen = new Set<string>();
-  const perKind = new Map<MaterialKind, number>();
+  const perKind = new Map<AnyMaterialKind, number>();
   const found: FoundMaterial[] = [];
 
   for (const q of KIND_QUERIES(searchName)) {
@@ -70,12 +82,20 @@ export async function findMaterialsForExam(
       seen.add(h.url);
       if (!pageIsAboutExam(exam.name, `${h.title} ${h.snippet} ${h.url}`)) continue;
       const kind = classifyMaterial({ url: h.url, title: h.title });
-      if (!kind || (perKind.get(kind) ?? 0) >= MAX_PER_KIND) continue;
+      const isPaper = (PAPER_KINDS as readonly string[]).includes(kind ?? "");
+      if (!kind || (perKind.get(kind) ?? 0) >= (isPaper ? MAX_PER_PAPER_KIND : MAX_PER_KIND))
+        continue;
       // A notification belongs to one edition; skip other editions' notices.
       if (kind === "notification" && !notificationMatchesEdition(exam.name, `${h.url} ${h.title}`))
         continue;
       perKind.set(kind, (perKind.get(kind) ?? 0) + 1);
-      found.push({ kind, title: cleanMaterialTitle(h.title, h.url), url: h.url, host: h.host });
+      found.push({
+        kind,
+        title: cleanMaterialTitle(h.title, h.url),
+        url: h.url,
+        host: h.host,
+        paper_year: isPaper ? extractPaperYear({ url: h.url, title: h.title }) : null,
+      });
     }
   }
   return found;
